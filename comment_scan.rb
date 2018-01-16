@@ -3,11 +3,14 @@ require "chatx"
 require 'uri'
 require 'logger'
 require 'time'
+require 'yaml'
 
 $start = Time.now
 
-cb = ChatBot.new(ENV['ChatXUsername'], ENV['ChatXPassword'])
-cli = SE::API::Client.new(ENV['APIKey'], site: 'interpersonal')
+settings = YAML.load_file('./settings.yml')
+
+cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
+cli = SE::API::Client.new(settings['APIKey'], site: 'interpersonal')
 
 cb.login
 
@@ -16,8 +19,15 @@ cb.join_room 63296
 cb.gen_hooks do
   room 63296 do
     command("!!/alive") { say "I'm alive!" }
+    command("!!/help") { say(File.read('./help.txt')) }
     command("!!/quota") { say "#{cli.quota} requests remaining" }
     command("!!/uptime") { say Time.at(Time.now - $start).strftime("Up %H hours, %M minutes, %S seconds") }
+    command "!!/logsize" do
+      say(%w[api_json.log api_raw.log msg.log websocket_raw.log websockets_json.log].map do |log|
+        log_file = "./#{log}"
+        "#{log}: #{(File.size(log_file).to_f/(1024**2)).round(2)}MB" if File.exist? log_file
+      end.join("\n"))
+    end
   end
 end
 
@@ -47,7 +57,7 @@ end
 def user_for(author)
   return "" if author.to_s.empty?
   name = author["display_name"]
-  link = author["link"]
+  link = author["link"].gsub("/users/", "/u/")
   rep = author["reputation"]
   "[#{name}](#{link}) (#{rep} rep)"
 end
@@ -86,7 +96,7 @@ loop do
     edit_ts = ts_for post.json["last_edit_date"]
     type = post.json["post_type"][0].upcase
     cb.say(comment.link, 63296)
-    msg = "##{post.json["post_id"]} [#{type}: #{post.title}](#{post.link}) (score: #{post.score}) | posted #{creation_ts} by #{author}"
+    msg = "##{post.json["post_id"]} #{user_for(comment.json["owner"])} | [#{type}: #{post.title}](#{post.link}) (score: #{post.score}) | posted #{creation_ts} by #{author}"
     msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
     cb.say(msg, 63296)
 
