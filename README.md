@@ -15,11 +15,19 @@ To install:
 
 ## Running the bot
 
-Set up the environment:
+Either use environment variables with:
 
 - Setup username with `export ChatXUsername='chat@bot.com'`
 - Setup password with `export ChatXPassword='correct horse battery staple'`
 - (OPTIONAL, but recommended) Setup API key with `expoert APIKey='jaoehoagheraghpreuihgape'`
+
+Or you can create a `settings.yml` file with the form:
+
+```yaml
+ChatXUsername: chat@bot.com
+ChatXPassword: 'correct horse battery staple'
+APIKey: fajoweihfoaihfoiawhf
+```
 
 Run the bot (`bundle exec ruby comment_bot.rb`)
 
