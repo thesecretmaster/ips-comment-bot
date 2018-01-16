@@ -7,7 +7,7 @@ require 'yaml'
 
 $start = Time.now
 
-settings = YAML.load_file('./settings.yml')
+settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
 cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
 cli = SE::API::Client.new(settings['APIKey'], site: 'interpersonal')
