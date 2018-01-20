@@ -2,3 +2,4 @@ settings.yml
 init.sh
 *.log
 *.log.*
+db/db.sqlite3

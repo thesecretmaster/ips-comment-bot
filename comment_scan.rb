@@ -30,12 +30,15 @@ cb.gen_hooks do
       end.join("\n"))
     end
     command("!!/howmany") { say "I've scanned #{Comment.count} comments" }
+    command "!!/test" do |type, *body|
+      say(report(type, body.join(" ")) || "Didn't match any filters")
+    end
   end
 end
 
 comments = cli.comments[0..-1]
 
-post_on_startup = 1
+post_on_startup = 0
 
 @last_creation_date = comments[post_on_startup].json["creation_date"].to_i+1 unless comments[post_on_startup].nil?
 
@@ -59,7 +62,7 @@ end
 def user_for(author)
   return "" unless author.is_a? SE::API::User
   name = author.name
-  link = author.link.gsub("/users/", "/u/")
+  link = author.link.to_s.gsub("/users/", "/u/")
   rep = author.reputation
   "[#{name}](#{link}) (#{rep} rep)"
 end
@@ -71,6 +74,17 @@ def record_comment(comment)
     c.send(:"#{f}=", comment.send(f))
   end
   c.save unless Comment.exists?(c.attributes.reject { |_k,v| v.nil? })
+end
+
+def report(post_type, comment)
+  case post_type[0].downcase
+  when "q"
+    matching_regexes = [%r{\byou\Wshould\b}].select do |regex|
+      regex.match? comment.downcase
+    end
+    return "Matched regex(es) #{matching_regexes}" unless matching_regexes.empty?
+  when "a"
+  end
 end
 
 loop do
@@ -104,11 +118,14 @@ loop do
     msg = "##{post.json["post_id"]} #{user_for(comment.owner)} | [#{type}: #{post.title}](#{post.link}) (score: #{post.score}) | posted #{creation_ts} by #{author}"
     msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
     cb.say(msg, 63296)
-
     @logger.info "Parsed comment:"
     @logger.info "(JSON) #{comment.json}"
     @logger.info "(SE::API::Comment) #{comment.inspect}"
     @logger.info "Current time: #{Time.new.to_i}"
+
+    report_text = report(post.type, comment.body_markdown)
+    cb.say(report_text, 63296) if report_text
+
     #rval = cb.say(comment.link, 63296)
     #cb.delete(rval.to_i)
     #cb.say(msg, 63296)
