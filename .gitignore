@@ -1,2 +1,4 @@
 settings.yml
 init.sh
+*.log
+*.log.*

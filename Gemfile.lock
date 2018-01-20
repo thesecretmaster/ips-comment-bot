@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/izwick-schachter/se-api
-  revision: 6dcf4083a408829d40f327f12549a716d66f34b5
+  revision: 335df040010910312dbab7acfb1a2f3065c7b5ea
   branch: master
   specs:
     se-api (0.0.0.beta1)
@@ -31,15 +31,30 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
+    activemodel (5.1.4)
+      activesupport (= 5.1.4)
+    activerecord (5.1.4)
+      activemodel (= 5.1.4)
+      activesupport (= 5.1.4)
+      arel (~> 8.0)
+    activesupport (5.1.4)
+      concurrent-ruby (~> 1.0, >= 1.0.2)
+      i18n (~> 0.7)
+      minitest (~> 5.1)
+      tzinfo (~> 1.1)
+    arel (8.0.0)
     classifier-reborn (2.1.0)
       fast-stemmer (~> 1.0)
     coderay (1.1.2)
+    concurrent-ruby (1.0.5)
     domain_name (0.5.20170404)
       unf (>= 0.0.5, < 1.0.0)
     fast-stemmer (1.0.2)
     htmlentities (4.3.4)
     http-cookie (1.0.3)
       domain_name (~> 0.5)
+    i18n (0.9.1)
+      concurrent-ruby (~> 1.0)
     mechanize (2.7.5)
       domain_name (~> 0.5, >= 0.5.1)
       http-cookie (~> 1.0)
@@ -54,6 +69,7 @@ GEM
       mime-types-data (~> 3.2015)
     mime-types-data (3.2016.0521)
     mini_portile2 (2.3.0)
+    minitest (5.11.1)
     net-http-digest_auth (1.4.1)
     net-http-persistent (2.9.4)
     nokogiri (1.8.1)
@@ -63,6 +79,11 @@ GEM
     pry (0.11.3)
       coderay (~> 1.1.0)
       method_source (~> 0.9.0)
+    rake (12.3.0)
+    sqlite3 (1.3.13)
+    thread_safe (0.3.6)
+    tzinfo (1.2.4)
+      thread_safe (~> 0.1)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.4)
@@ -75,12 +96,15 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  activerecord
   chatx!
   classifier-reborn (= 2.1.0)
   htmlentities
   pry
+  rake
   se-api!
   se-realtime!
+  sqlite3
 
 BUNDLED WITH
    1.16.1
