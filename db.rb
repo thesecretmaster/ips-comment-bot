@@ -12,3 +12,6 @@ class Comment < ActiveRecord::Base
   has_one :user, as: :owner
   has_one :user, as: :reply_to_user
 end
+
+class Regex < ActiveRecord::Base
+end

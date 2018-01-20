@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180120171757) do
+ActiveRecord::Schema.define(version: 20180120212028) do
 
   create_table "comments", force: :cascade do |t|
     t.text "body"
@@ -24,6 +24,11 @@ ActiveRecord::Schema.define(version: 20180120171757) do
     t.text "post_type"
     t.integer "reply_to_user"
     t.integer "score"
+  end
+
+  create_table "regexes", force: :cascade do |t|
+    t.text "post_type"
+    t.text "regex"
   end
 
   create_table "users", force: :cascade do |t|

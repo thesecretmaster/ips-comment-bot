@@ -33,6 +33,18 @@ cb.gen_hooks do
     command "!!/test" do |type, *body|
       say(report(type, body.join(" ")) || "Didn't match any filters")
     end
+    command "!!/add" do |type, *regex|
+      if r = Regex.create(post_type: type[0], regex: regex.join(" "))
+        say "Added regex #{r.regex} for post_type #{r.post_type}"
+      end
+    end
+    command "!!/del" do |type, *regex|
+      if r = Regex.find_by(post_type: type[0], regex: regex.join(' '))
+        say "Destroyed #{r.regex} (post_type #{r.post_type})!" if r.destroy
+      else
+        say "Could not find regex to destroy"
+      end
+    end
   end
 end
 
@@ -79,11 +91,17 @@ end
 def report(post_type, comment)
   case post_type[0].downcase
   when "q"
-    matching_regexes = [%r{\byou\Wshould\b}].select do |regex|
+    regexes = Regex.where(post_type: 'q').map { |r| %r{#{r.regex}} }
+    matching_regexes = regexes.select do |regex|
       regex.match? comment.downcase
     end
     return "Matched regex(es) #{matching_regexes}" unless matching_regexes.empty?
   when "a"
+    regexes = Regex.where(post_type: 'a').map { |r| %r{#{r.regex}} }
+    matching_regexes = regexes.select do |regex|
+      regex.match? comment.downcase
+    end
+    return "Matched regex(es) #{matching_regexes}" unless matching_regexes.empty?
   end
 end
 
