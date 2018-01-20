@@ -6,6 +6,8 @@ require 'time'
 require 'yaml'
 require './db'
 
+IO.write("bot.pid", Process.pid.to_s)
+
 $start = Time.now
 
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
@@ -14,7 +16,7 @@ cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
 cli = SE::API::Client.new(settings['APIKey'], site: 'interpersonal')
 
 cb.login
-
+cb.say("_Starting at rev #{`git show --pretty=%H`[0...6]}_", 63296)
 cb.join_room 63296
 
 cb.gen_hooks do
@@ -49,6 +51,11 @@ cb.gen_hooks do
       c = Comment.find_by(comment_id: cid)
       say c.body_markdown if c
     end
+    command "!!/pull" do
+      `git pull`
+      Kernel.exec('bundle exec ruby comment_scan.rb')
+    end
+    command("!!/kill") { `kill -9 $(cat bot.pid)` }
   end
 end
 

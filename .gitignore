@@ -3,3 +3,5 @@ init.sh
 *.log
 *.log.*
 db/db.sqlite3
+kill.sh
+bot.pid
