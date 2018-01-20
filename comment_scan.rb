@@ -16,7 +16,7 @@ cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
 cli = SE::API::Client.new(settings['APIKey'], site: 'interpersonal')
 
 cb.login
-cb.say("_Starting at rev #{`git rev-parse --short HEAD`}_", 63296)
+cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop}_", 63296)
 cb.join_room 63296
 
 cb.gen_hooks do
