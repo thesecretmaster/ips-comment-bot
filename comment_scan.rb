@@ -16,7 +16,7 @@ cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
 cli = SE::API::Client.new(settings['APIKey'], site: 'interpersonal')
 
 cb.login
-cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop}_", 63296)
+cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop}_", 63296)
 cb.join_room 63296
 
 cb.gen_hooks do
@@ -56,6 +56,7 @@ cb.gen_hooks do
       Kernel.exec('bundle exec ruby comment_scan.rb')
     end
     command("!!/kill") { `kill -9 $(cat bot.pid)` }
+    command("!!/rev") { say "Currently at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop}" }
   end
 end
 
