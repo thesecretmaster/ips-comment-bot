@@ -45,6 +45,10 @@ cb.gen_hooks do
         say "Could not find regex to destroy"
       end
     end
+    command "!!/cid" do |cid|
+      c = Comment.find_by(comment_id: cid)
+      say c.body_markdown if c
+    end
   end
 end
 
