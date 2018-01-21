@@ -12,11 +12,14 @@ $start = Time.now
 
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
+post_on_startup = 1
+
 cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
 cli = SE::API::Client.new(settings['APIKey'], site: 'interpersonal')
 
 cb.login
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", 63296)
+sleep 1 # So we don't get errors
 cb.join_room 63296
 
 cb.gen_hooks do
@@ -61,8 +64,6 @@ cb.gen_hooks do
 end
 
 comments = cli.comments[0..-1]
-
-post_on_startup = 0
 
 @last_creation_date = comments[post_on_startup].json["creation_date"].to_i+1 unless comments[post_on_startup].nil?
 
@@ -148,7 +149,7 @@ loop do
     msg = "##{post.json["post_id"]} #{user_for(comment.owner)} | [#{type}: #{post.title}](#{post.link}) (score: #{post.score}) | posted #{creation_ts} by #{author}"
     msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
     # .reject { |c| c.owner.id.to_i == 31 }
-    msg += " | @Mithrandir (has magic comment)" if post.comments.any? { |c| c.body_markdown.include? "https://interpersonal.meta.stackexchange.com/q/1644/31" && c.user.id.to_i == 31 }
+    msg += " | @Mithrandir (has magic comment)" if post.comments.any? { |c| c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && c.user.id.to_i == 31 }
     cb.say(msg, 63296)
     @logger.info "Parsed comment:"
     @logger.info "(JSON) #{comment.json}"
