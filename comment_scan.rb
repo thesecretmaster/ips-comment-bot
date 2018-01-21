@@ -89,7 +89,7 @@ end
 def user_for(author)
   return "" unless author.is_a? SE::API::User
   name = author.name
-  link = author.link&.gsub("/users/", "/u/")
+  link = author.link&.gsub(/(^.*u[sers]{4}?\/\d*)\/.*$/, '\1')&.gsub("/users/", "/u/")
   rep = author.reputation
   return "(deleted user #{author.id})" if name.nil? && link.nil? && rep.nil?
   "[#{name}](#{link}) (#{rep} rep)"
