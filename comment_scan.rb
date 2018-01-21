@@ -57,10 +57,10 @@ cb.gen_hooks do
     end
     command "!!/pull" do |*args|
       `git pull`
-      Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args.join(' ')}")
+      Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
     end
     command "!!/restart" do |*args|
-      Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args.join(' ')}")
+      Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
     end
     command("!!/kill") { `kill -9 $(cat bot.pid)` }
     command("!!/rev") { say "Currently at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop}" }
