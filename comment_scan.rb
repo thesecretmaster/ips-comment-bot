@@ -22,7 +22,7 @@ cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
 cb.login
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", 63296)
 cb.join_room 63296
-BOT_NAME = setting['name']
+BOT_NAME = settings['name']
 def matches_bot(bot)
   puts "Checking if #{bot} matches #{BOT_NAME}"
   bot.nil? || bot == '*' || bot.downcase == BOT_NAME
