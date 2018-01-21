@@ -22,14 +22,15 @@ cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
 cb.login
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", 63296)
 cb.join_room 63296
-
+BOT_NAME = setting['name']
 def matches_bot(bot)
-  puts "Checking if #{bot} matches #{settings['name']}"
-  bot.nil? || bot == '*' || bot.downcase == settings['name']
+  puts "Checking if #{bot} matches #{BOT_NAME}"
+  bot.nil? || bot == '*' || bot.downcase == BOT_NAME
 end
 
 cb.gen_hooks do
   room 63296 do
+    command("!!/whoami") { |bot| say (rand(0...20) == rand(0...20) ? "24601" : BOT_NAME) }
     command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
     command("!!/help") { |bot| say(File.read('./help.txt')) if matches_bot(bot) }
     command("!!/quota") { |bot| say "#{cli.quota} requests remaining" if matches_bot(bot) }
