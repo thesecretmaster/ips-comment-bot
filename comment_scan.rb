@@ -24,6 +24,7 @@ cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git r
 cb.join_room 63296
 
 def matches_bot(bot)
+  puts "Checking if #{bot} matches #{settings['name']}"
   bot.nil? || bot == '*' || bot.downcase == settings['name']
 end
 
