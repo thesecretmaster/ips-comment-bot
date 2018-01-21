@@ -9,6 +9,7 @@ require './db'
 IO.write("bot.pid", Process.pid.to_s)
 
 $start = Time.now
+$manual_scan = []
 
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
@@ -62,6 +63,9 @@ cb.gen_hooks do
     end
     command("!!/kill") { `kill -9 $(cat bot.pid)` }
     command("!!/rev") { say "Currently at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop}" }
+    command "!!/manscan" do |*args|
+      $queue += cli.comments(args)
+    end
   end
 end
 
@@ -124,7 +128,7 @@ end
 sleep 1 # So we don't get chat errors for 3 messages in a row
 
 loop do
-  comments = cli.comments(fromdate: @last_creation_date)
+  comments = cli.comments(fromdate: @last_creation_date) + $manual_scan
   @last_creation_date = comments[0].json["creation_date"].to_i+1 unless comments[0].nil?
   puts comments.length
   comments.each do |comment|
