@@ -19,7 +19,6 @@ cli = SE::API::Client.new(settings['APIKey'], site: 'interpersonal')
 
 cb.login
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", 63296)
-sleep 1 # So we don't get errors
 cb.join_room 63296
 
 cb.gen_hooks do
@@ -120,6 +119,8 @@ def report(post_type, comment)
     return "Matched regex(es) #{matching_regexes}" unless matching_regexes.empty?
   end
 end
+
+sleep 1 # So we don't get chat errors for 3 messages in a row
 
 loop do
   comments = cli.comments(fromdate: @last_creation_date)
