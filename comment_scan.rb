@@ -64,7 +64,7 @@ cb.gen_hooks do
     command("!!/kill") { `kill -9 $(cat bot.pid)` }
     command("!!/rev") { say "Currently at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop}" }
     command "!!/manscan" do |*args|
-      $queue += cli.comments(args)
+      $manual_scan += cli.comments(args)
     end
   end
 end
