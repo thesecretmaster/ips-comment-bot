@@ -17,7 +17,7 @@ settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : E
 post_on_startup = ARGV[0].to_i || 0
 
 cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
-cli = SE::API::Client.new(settings['APIKey'], site: 'interpersonal')
+cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
 
 cb.login
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", 63296)
