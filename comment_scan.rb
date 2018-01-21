@@ -23,52 +23,66 @@ cb.login
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", 63296)
 cb.join_room 63296
 
+def matches_bot(bot)
+  bot.nil? || bot == '*' || bot.downcase == settings['name']
+end
+
 cb.gen_hooks do
   room 63296 do
-    command("!!/alive") { say "I'm alive!" }
-    command("!!/help") { say(File.read('./help.txt')) }
-    command("!!/quota") { say "#{cli.quota} requests remaining" }
-    command("!!/uptime") { say Time.at(Time.now - start).strftime("Up %H hours, %M minutes, %S seconds") }
-    command "!!/logsize" do
-      say(%w[api_json.log api_raw.log msg.log websocket_raw.log websockets_json.log].map do |log|
-        log_file = "./#{log}"
-        "#{log}: #{(File.size(log_file).to_f/(1024**2)).round(2)}MB" if File.exist? log_file
-      end.join("\n"))
-    end
-    command("!!/howmany") { say "I've scanned #{Comment.count} comments" }
+    command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
+    command("!!/help") { |bot| say(File.read('./help.txt')) if matches_bot(bot) }
+    command("!!/quota") { |bot| say "#{cli.quota} requests remaining" if matches_bot(bot) }
+    command("!!/uptime") { |bot| say Time.at(Time.now - start).strftime("Up %H hours, %M minutes, %S seconds") if matches_bot(bot) }
+    # command "!!/logsize" do
+    #   say(%w[api_json.log api_raw.log msg.log websocket_raw.log websockets_json.log].map do |log|
+    #     log_file = "./#{log}"
+    #     "#{log}: #{(File.size(log_file).to_f/(1024**2)).round(2)}MB" if File.exist? log_file
+    #   end.join("\n"))
+    # end
+    command("!!/howmany") { |bot| say "I've scanned #{Comment.count} comments" if matches_bot(bot) }
     command "!!/test" do |type, *body|
       say "Unknown post type '#{type}'" unless %w[q a].include? type[0]
       say(report(type, body.join(" ")) || "Didn't match any filters")
     end
-    command "!!/add" do |type, *regex|
-      if r = Regex.create(post_type: type[0], regex: regex.join(" "))
+    command "!!/add" do |bot, type, *regex|
+      if matches_bot(bot) && r = Regex.create(post_type: type[0], regex: regex.join(" "))
         say "Added regex #{r.regex} for post_type #{r.post_type}"
       end
     end
-    command "!!/del" do |type, *regex|
-      if r = Regex.find_by(post_type: type[0], regex: regex.join(' '))
+    command "!!/del" do |bot, type, *regex|
+      if matches_bot(bot) && r = Regex.find_by(post_type: type[0], regex: regex.join(' '))
         say "Destroyed #{r.regex} (post_type #{r.post_type})!" if r.destroy
       else
         say "Could not find regex to destroy"
       end
     end
-    command "!!/cid" do |cid|
-      c = Comment.find_by(comment_id: cid)
-      say c.body_markdown if c
+    command "!!/cid" do |bot, cid|
+      if matches_bot(bot)
+        c = Comment.find_by(comment_id: cid)
+        if c
+          say c.body_markdown
+        else
+          say "Could not find comment with id #{cid}"
+        end
+      end
     end
-    command "!!/pull" do |*args|
-      `git pull`
-      Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+    command "!!/pull" do |bot, *args|
+      if matches_bot(bot)
+        `git pull`
+        Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+      end
     end
-    command "!!/restart" do |*args|
-      Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+    command "!!/restart" do |bot, *args|
+      if matches_bot(bot)
+        Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+      end
     end
-    command("!!/kill") { `kill -9 $(cat bot.pid)` }
-    command("!!/rev") { say "Currently at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop}" }
+    command("!!/kill") { |bot| `kill -9 $(cat bot.pid)` if matches_bot(bot) }
+    command("!!/rev") { |bot| say "Currently at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop}" if matches_bot(bot) }
     command "!!/manscan" do |*args|
       manual_scan += cli.comments(args)
     end
-    command("!!/ttscan") { say "#{sleeptime} seconds remaning until the next scan" }
+    command("!!/ttscan") { |bot| say "#{sleeptime} seconds remaning until the next scan" if matches_bot(bot) }
   end
 end
 
