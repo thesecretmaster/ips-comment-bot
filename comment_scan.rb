@@ -12,7 +12,7 @@ $start = Time.now
 
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
-post_on_startup = 1
+post_on_startup = ARGV[0].to_i || 0
 
 cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
 cli = SE::API::Client.new(settings['APIKey'], site: 'interpersonal')
@@ -54,9 +54,12 @@ cb.gen_hooks do
       c = Comment.find_by(comment_id: cid)
       say c.body_markdown if c
     end
-    command "!!/pull" do
+    command "!!/pull" do |*args|
       `git pull`
-      Kernel.exec('bundle exec ruby comment_scan.rb')
+      Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args.join(' ')}")
+    end
+    command "!!/restart" do |*args|
+      Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args.join(' ')}")
     end
     command("!!/kill") { `kill -9 $(cat bot.pid)` }
     command("!!/rev") { say "Currently at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop}" }
