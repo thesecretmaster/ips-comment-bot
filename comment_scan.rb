@@ -37,6 +37,7 @@ cb.gen_hooks do
     end
     command("!!/howmany") { say "I've scanned #{Comment.count} comments" }
     command "!!/test" do |type, *body|
+      say "Unknown post type '#{type}'" unless %w[q a].include? type[0]
       say(report(type, body.join(" ")) || "Didn't match any filters")
     end
     command "!!/add" do |type, *regex|
