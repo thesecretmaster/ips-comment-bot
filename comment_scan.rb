@@ -8,8 +8,9 @@ require './db'
 
 IO.write("bot.pid", Process.pid.to_s)
 
-$start = Time.now
-$manual_scan = []
+start = Time.now
+manual_scan = []
+sleeptime = 0
 
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
@@ -27,7 +28,7 @@ cb.gen_hooks do
     command("!!/alive") { say "I'm alive!" }
     command("!!/help") { say(File.read('./help.txt')) }
     command("!!/quota") { say "#{cli.quota} requests remaining" }
-    command("!!/uptime") { say Time.at(Time.now - $start).strftime("Up %H hours, %M minutes, %S seconds") }
+    command("!!/uptime") { say Time.at(Time.now - start).strftime("Up %H hours, %M minutes, %S seconds") }
     command "!!/logsize" do
       say(%w[api_json.log api_raw.log msg.log websocket_raw.log websockets_json.log].map do |log|
         log_file = "./#{log}"
@@ -64,8 +65,9 @@ cb.gen_hooks do
     command("!!/kill") { `kill -9 $(cat bot.pid)` }
     command("!!/rev") { say "Currently at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop}" }
     command "!!/manscan" do |*args|
-      $manual_scan += cli.comments(args)
+      manual_scan += cli.comments(args)
     end
+    command("!!/ttscan") { say "#{sleeptime} seconds remaning until the next scan" }
   end
 end
 
@@ -128,7 +130,8 @@ end
 sleep 1 # So we don't get chat errors for 3 messages in a row
 
 loop do
-  comments = cli.comments(fromdate: @last_creation_date) + $manual_scan
+  comments = cli.comments(fromdate: @last_creation_date) + manual_scan
+  manual_scan = []
   @last_creation_date = comments[0].json["creation_date"].to_i+1 unless comments[0].nil?
   puts comments.length
   comments.each do |comment|
@@ -174,5 +177,6 @@ loop do
 
     record_comment(comment)    
   end
-  sleep 60
+  sleeptime = 60
+  while sleeptime > 0 { sleep 1; sleeptime -= 1 }
 end
