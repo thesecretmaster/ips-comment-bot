@@ -178,5 +178,5 @@ loop do
     record_comment(comment)    
   end
   sleeptime = 60
-  while sleeptime > 0 { sleep 1; sleeptime -= 1 }
+  while sleeptime > 0 do sleep 1; sleeptime -= 1 end
 end
