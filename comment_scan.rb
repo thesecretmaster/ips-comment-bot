@@ -177,8 +177,7 @@ loop do
     cb.say(comment.link, 63296)
     msg = "##{post.json["post_id"]} #{user_for(comment.owner)} | [#{type}: #{post.title}](#{post.link}) (score: #{post.score}) | posted #{creation_ts} by #{author}"
     msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
-    # .reject { |c| c.owner.id.to_i == 31 }
-    msg += " | @Mithrandir (has magic comment)" if post.comments.any? { |c| c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && c.user.id.to_i == 31 }
+    msg += " | @Mithrandir (has magic comment)" if !(comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && comment.owner.id == 31) && post.comments.any? { |c| c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && c.user.id.to_i == 31 }
     cb.say(msg, 63296)
     @logger.info "Parsed comment:"
     @logger.info "(JSON) #{comment.json}"
