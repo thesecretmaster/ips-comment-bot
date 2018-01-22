@@ -52,10 +52,12 @@ cb.gen_hooks do
       end
     end
     command "!!/del" do |bot, type, regex, *reason|
-      if matches_bot(bot) && r = Regex.find_by(post_type: type[0], regex: regex)
-        say "Destroyed #{r.regex} (post_type #{r.post_type})!" if r.destroy
-      else
-        say "Could not find regex to destroy"
+      if matches_bot(bot)
+        if r = Regex.find_by(post_type: type[0], regex: regex)
+          say "Destroyed #{r.regex} (post_type #{r.post_type})!" if r.destroy
+        else
+          say "Could not find regex to destroy"
+        end
       end
     end
     command "!!/cid" do |bot, cid|
