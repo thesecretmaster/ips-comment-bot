@@ -14,4 +14,9 @@ class Comment < ActiveRecord::Base
 end
 
 class Regex < ActiveRecord::Base
+  belongs_to :reason
+end
+
+class Reason < ActiveRecord::Base
+  has_many :regexes
 end

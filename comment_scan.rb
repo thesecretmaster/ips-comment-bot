@@ -18,10 +18,10 @@ post_on_startup = ARGV[0].to_i || 0
 
 cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
 cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
-
+ROOM_ID = settings['room_id'].to_i
 cb.login
-cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", 63296)
-cb.join_room 63296
+cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", ROOM_ID)
+cb.join_room ROOM_ID
 BOT_NAME = settings['name']
 def matches_bot(bot)
   puts "Checking if #{bot} matches #{BOT_NAME}"
@@ -29,7 +29,7 @@ def matches_bot(bot)
 end
 
 cb.gen_hooks do
-  room 63296 do
+  room ROOM_ID do
     command("!!/whoami") { |bot| say (rand(0...20) == rand(0...20) ? "24601" : BOT_NAME) }
     command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
     command("!!/help") { |bot| say(File.read('./help.txt')) if matches_bot(bot) }
@@ -46,13 +46,13 @@ cb.gen_hooks do
       say "Unknown post type '#{type}'" unless %w[q a].include? type[0]
       say(report(type, body.join(" ")) || "Didn't match any filters")
     end
-    command "!!/add" do |bot, type, *regex|
-      if matches_bot(bot) && r = Regex.create(post_type: type[0], regex: regex.join(" "))
-        say "Added regex #{r.regex} for post_type #{r.post_type}"
+    command "!!/add" do |bot, type, regex, *reason|
+      if matches_bot(bot) && r = Reason.find_or_create_by(name: reason.join(' ')).regexes.create(post_type: type[0], regex: regex)
+        say "Added regex #{r.regex} for post_type #{r.post_type} with reason '#{r.reason.name}'"
       end
     end
-    command "!!/del" do |bot, type, *regex|
-      if matches_bot(bot) && r = Regex.find_by(post_type: type[0], regex: regex.join(' '))
+    command "!!/del" do |bot, type, regex, *reason|
+      if matches_bot(bot) && r = Regex.find_by(post_type: type[0], regex: regex)
         say "Destroyed #{r.regex} (post_type #{r.post_type})!" if r.destroy
       else
         say "Could not find regex to destroy"
@@ -128,20 +128,11 @@ def record_comment(comment)
 end
 
 def report(post_type, comment)
-  case post_type[0].downcase
-  when "q"
-    regexes = Regex.where(post_type: 'q').map { |r| %r{#{r.regex}} }
-    matching_regexes = regexes.select do |regex|
-      regex.match? comment.downcase
-    end
-    return "Matched regex(es) #{matching_regexes}" unless matching_regexes.empty?
-  when "a"
-    regexes = Regex.where(post_type: 'a').map { |r| %r{#{r.regex}} }
-    matching_regexes = regexes.select do |regex|
-      regex.match? comment.downcase
-    end
-    return "Matched regex(es) #{matching_regexes}" unless matching_regexes.empty?
+  regexes = Regex.where(post_type: post_type[0].downcase)
+  matching_regexes = regexes.select do |regex|
+    %r{#{regex.regex}}.match? comment.downcase
   end
+  return "Matched regex(es) #{matching_regexes.map { |r| r.reason.nil? ? r.regex : r.reason.name }.uniq }" unless matching_regexes.empty?
 end
 
 sleep 1 # So we don't get chat errors for 3 messages in a row
@@ -174,18 +165,18 @@ loop do
     creation_ts = ts_for post.json["creation_date"]
     edit_ts = ts_for post.json["last_edit_date"]
     type = post.type[0].upcase
-    cb.say(comment.link, 63296)
+    cb.say(comment.link, ROOM_ID)
     msg = "##{post.json["post_id"]} #{user_for(comment.owner)} | [#{type}: #{post.title}](#{post.link}) (score: #{post.score}) | posted #{creation_ts} by #{author}"
     msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
     msg += " | @Mithrandir (has magic comment)" if !(comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && comment.owner.id == 31) && post.comments.any? { |c| c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && c.user.id.to_i == 31 }
-    cb.say(msg, 63296)
+    cb.say(msg, ROOM_ID)
     @logger.info "Parsed comment:"
     @logger.info "(JSON) #{comment.json}"
     @logger.info "(SE::API::Comment) #{comment.inspect}"
     @logger.info "Current time: #{Time.new.to_i}"
 
     report_text = report(post.type, comment.body_markdown)
-    cb.say(report_text, 63296) if report_text
+    cb.say(report_text, ROOM_ID) if report_text
 
     #rval = cb.say(comment.link, 63296)
     #cb.delete(rval.to_i)
