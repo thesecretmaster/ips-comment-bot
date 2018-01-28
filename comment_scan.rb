@@ -60,7 +60,7 @@ cb.gen_hooks do
                   "magic" => :magic_comment
                 }[type]
           status = {"on" => true, "off" => false}[status]
-          say "I #{stats ? "will" : "won't"} notify you on a #{act}" unless status.nil? || act.nil?
+          say "I #{status ? "will" : "won't"} notify you on a #{act}" unless status.nil? || act.nil?
           Room.find_by(room_id: room_id).update(**{act => status}) unless status.nil? || act.nil?
         end
       end
