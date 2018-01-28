@@ -60,7 +60,14 @@ cb.gen_hooks do
                   "magic" => :magic_match
                 }[type]
           status = {"on" => true, "off" => false}[status]
+          say "I #{stats ? "will" : "won't"} notify you on a #{act}" unless status.nil? || act.nil?
           Room.find_by(room_id: room_id).update(**{act => status}) unless status.nil? || act.nil?
+        end
+      end
+      command "!!/reports" do |bot|
+        if matches_bot(bot) && on?(room_id)
+          room = Room.find_by(room_id: room_id)
+          say "regex_match: #{!!room.regex_match}\nmagic_comment: #{!!room.magic_match}"
         end
       end
       command "!!/alive" do |bot|
