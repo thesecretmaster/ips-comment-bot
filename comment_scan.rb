@@ -238,7 +238,7 @@ loop do
     ROOMS.each do |room_id|
       room = Room.find_by(room_id: room_id)
       if room.on
-        if room.on && ((room.magic_match && has_magic_comment?(comment, post)) || (room.regex_match && report_text))
+        if room.on && ((room.magic_comment && has_magic_comment?(comment, post)) || (room.regex_match && report_text))
           cb.say(msg, room_id)
           cb.say(report_text, room_id) if room.regex_match && report_text
         end 
