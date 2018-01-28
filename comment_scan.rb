@@ -42,9 +42,11 @@ cb.gen_hooks do
     #   end.join("\n"))
     # end
     command("!!/howmany") { |bot| say "I've scanned #{Comment.count} comments" if matches_bot(bot) }
-    command "!!/test" do |type, *body|
-      say "Unknown post type '#{type}'" unless %w[q a].include? type[0]
-      say(report(type, body.join(" ")) || "Didn't match any filters")
+    command "!!/test" do |bot, type, *body|
+      if matches_bot(bot)
+        say "Unknown post type '#{type}'" unless %w[q a].include? type[0]
+        say(report(type, body.join(" ")) || "Didn't match any filters")
+      end
     end
     command "!!/add" do |bot, type, regex, *reason|
       if matches_bot(bot) && r = Reason.find_or_create_by(name: reason.join(' ')).regexes.create(post_type: type[0], regex: regex)
