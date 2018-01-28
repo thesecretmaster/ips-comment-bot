@@ -18,16 +18,23 @@ To install:
 
 Either use environment variables with:
 
+
 - Setup username with `export ChatXUsername='chat@bot.com'`
 - Setup password with `export ChatXPassword='correct horse battery staple'`
-- (OPTIONAL, but recommended) Setup API key with `expoert APIKey='jaoehoagheraghpreuihgape'`
+- (OPTIONAL, but recommended) Setup API key with `export APIKey='jaoehoagheraghpreuihgape'`
+- Setup bot name (how to call the bot) with `export name='ips'`
+- Setup the room the bot watches with `export room_id='63296'`
+- Setup the site with `export site='interpersonal'`
 
 Or you can create a `settings.yml` file with the form:
 
 ```yaml
 ChatXUsername: chat@bot.com
 ChatXPassword: 'correct horse battery staple'
-APIKey: fajoweihfoaihfoiawhf
+APIKey: jaoehoagheraghpreuihgape
+name: ips
+room_id: 63296
+site: interpersonal
 ```
 
 Run the bot (`bundle exec ruby comment_scan.rb`)
