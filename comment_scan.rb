@@ -57,7 +57,7 @@ cb.gen_hooks do
         if matches_bot(bot) && on?(room_id)
           act = {
                   "regex" => :regex_match,
-                  "magic" => :magic_match
+                  "magic" => :magic_comment
                 }[type]
           status = {"on" => true, "off" => false}[status]
           say "I #{stats ? "will" : "won't"} notify you on a #{act}" unless status.nil? || act.nil?
@@ -67,7 +67,7 @@ cb.gen_hooks do
       command "!!/reports" do |bot|
         if matches_bot(bot) && on?(room_id)
           room = Room.find_by(room_id: room_id)
-          say "regex_match: #{!!room.regex_match}\nmagic_comment: #{!!room.magic_match}"
+          say "regex_match: #{!!room.regex_match}\nmagic_comment: #{!!room.magic_comment}"
         end
       end
       command "!!/alive" do |bot|
