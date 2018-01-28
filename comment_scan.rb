@@ -18,18 +18,60 @@ post_on_startup = ARGV[0].to_i || 0
 
 cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
 cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
-ROOM_ID = settings['room_id'].to_i
+HQ_ROOM_ID = settings['hq_room_id'].to_i
+ROOMS = settings['rooms']
 cb.login
-cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", ROOM_ID)
-cb.join_room ROOM_ID
+cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", HQ_ROOM_ID)
+cb.join_room HQ_ROOM_ID
+cb.join_rooms ROOMS
 BOT_NAME = settings['name']
 def matches_bot(bot)
   puts "Checking if #{bot} matches #{BOT_NAME}"
   bot.nil? || bot == '*' || bot.downcase == BOT_NAME
 end
 
+ROOMS.each do |room_id|
+  Room.find_or_create_by(room_id: room_id)
+end
+
+def on?(room_id)
+  Room.find_by(room_id: room_id).on
+end
+
 cb.gen_hooks do
-  room ROOM_ID do
+  ROOMS.each do |room_id|
+    room room_id do
+      command "!!/off" do |bot|
+        if matches_bot(bot) && on?(room_id)
+          say "Turning off..."
+          Room.find_by(room_id: room_id).update(on: false)
+        end
+      end
+      command "!!/on" do |bot|
+        if matches_bot(bot) && !on?(room_id)
+          say "Turning on..."
+          Room.find_by(room_id: room_id).update(on: true)
+        end
+      end
+      command "!!/notify" do |bot, type, status|
+        if matches_bot(bot) && on?(room_id)
+          act = {
+                  "regex" => :regex_match,
+                  "magic" => :magic_match
+                }[type]
+          status = {"on" => true, "off" => false}[status]
+          Room.find_by(room_id: room_id).update(**{act => status}) unless status.nil? || act.nil?
+        end
+      end
+      command "!!/alive" do |bot|
+        if matches_bot(bot) && on?(room_id)
+          say "I'm alive and well :)"
+        end
+      end
+    end
+  end
+
+  room HQ_ROOM_ID do
     command("!!/whoami") { |bot| say (rand(0...20) == rand(0...20) ? "24601" : BOT_NAME) }
     command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
     command("!!/help") { |bot| say(File.read('./help.txt')) if matches_bot(bot) }
@@ -139,6 +181,13 @@ def report(post_type, comment)
   return "Matched regex(es) #{matching_regexes.map { |r| r.reason.nil? ? r.regex : r.reason.name }.uniq }" unless matching_regexes.empty?
 end
 
+def has_magic_comment?(comment, post)
+  !comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") &&
+  post.comments.any? do |c|
+    c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31")
+  end
+end
+
 sleep 1 # So we don't get chat errors for 3 messages in a row
 
 loop do
@@ -169,19 +218,29 @@ loop do
     creation_ts = ts_for post.json["creation_date"]
     edit_ts = ts_for post.json["last_edit_date"]
     type = post.type[0].upcase
-    cb.say(comment.link, ROOM_ID)
+    cb.say(comment.link, HQ_ROOM_ID)
     msg = "##{post.json["post_id"]} #{user_for(comment.owner)} | [#{type}: #{post.title}](#{post.link}) (score: #{post.score}) | posted #{creation_ts} by #{author}"
     msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
     # msg += " | @Mithrandir (has magic comment)" if !(comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && comment.owner.id == 31) && post.comments.any? { |c| c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && c.user.id.to_i == 31 }
-    msg += " | @Mithrandir (has magic comment)" if !comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && post.comments.any? { |c| c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") }
-    cb.say(msg, ROOM_ID)
+    msg += " | @Mithrandir (has magic comment)" if has_magic_comment? comment, post
+    cb.say(msg, HQ_ROOM_ID)
+
+    report_text = report(post.type, comment.body_markdown)
+    cb.say(report_text, HQ_ROOM_ID) if report_text
+
+    ROOMS.each do |room_id|
+      room = Room.find_by(room_id: room_id)
+      if room.on
+        if room.on && ((room.magic_match && has_magic_comment?(comment, post)) || (room.regex_match && report_text))
+          cb.say(msg, room_id)
+          cb.say(report_text, room_id) if room.regex_match && report_text
+        end 
+      end
+    end
     @logger.info "Parsed comment:"
     @logger.info "(JSON) #{comment.json}"
     @logger.info "(SE::API::Comment) #{comment.inspect}"
     @logger.info "Current time: #{Time.new.to_i}"
-
-    report_text = report(post.type, comment.body_markdown)
-    cb.say(report_text, ROOM_ID) if report_text
 
     #rval = cb.say(comment.link, 63296)
     #cb.delete(rval.to_i)

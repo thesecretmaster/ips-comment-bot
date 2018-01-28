@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180122175032) do
+ActiveRecord::Schema.define(version: 20180128210503) do
 
   create_table "comments", force: :cascade do |t|
     t.text "body"
@@ -35,6 +35,13 @@ ActiveRecord::Schema.define(version: 20180122175032) do
     t.text "post_type"
     t.text "regex"
     t.integer "reason_id"
+  end
+
+  create_table "rooms", force: :cascade do |t|
+    t.integer "room_id"
+    t.boolean "magic_comment"
+    t.boolean "regex_match"
+    t.boolean "on"
   end
 
   create_table "users", force: :cascade do |t|

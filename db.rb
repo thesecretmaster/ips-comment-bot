@@ -20,3 +20,6 @@ end
 class Reason < ActiveRecord::Base
   has_many :regexes
 end
+
+class Room < ActiveRecord::Base
+end

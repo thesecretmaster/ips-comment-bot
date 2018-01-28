@@ -16,10 +16,8 @@ GIT
       permessage_deflate (~> 0.1)
       websocket-driver (~> 0.6)
 
-GIT
-  remote: https://gitlab.com/izwick-schachter/ChatX
-  revision: e2e07fcee5784ea48853cd90c2df525d12449ca3
-  branch: master
+PATH
+  remote: ../ChatX
   specs:
     chatx (0.0.0.pre.pre3)
       htmlentities (~> 4.3)
@@ -53,7 +51,7 @@ GEM
     htmlentities (4.3.4)
     http-cookie (1.0.3)
       domain_name (~> 0.5)
-    i18n (0.9.1)
+    i18n (0.9.3)
       concurrent-ruby (~> 1.0)
     mechanize (2.7.5)
       domain_name (~> 0.5, >= 0.5.1)
@@ -69,7 +67,7 @@ GEM
       mime-types-data (~> 3.2015)
     mime-types-data (3.2016.0521)
     mini_portile2 (2.3.0)
-    minitest (5.11.1)
+    minitest (5.11.3)
     net-http-digest_auth (1.4.1)
     net-http-persistent (2.9.4)
     nokogiri (1.8.1)
