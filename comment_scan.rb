@@ -71,6 +71,9 @@ cb.gen_hooks do
           say "regex_match: #{!!room.regex_match}\nmagic_comment: #{!!room.magic_comment}"
         end
       end
+      command "!!/regexes" do |bot|
+        say(Regex.all.map { |r| "#{r.post_type}: #{r.regex}" }.join("\n")) if matches_bot(bot) && on?(room_id)
+      end
       command "!!/alive" do |bot|
         if matches_bot(bot) && on?(room_id)
           say "I'm alive and well :)"
