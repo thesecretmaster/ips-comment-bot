@@ -76,13 +76,16 @@ cb.gen_hooks do
           say "I'm alive and well :)"
         end
       end
+      command "!!/help" do |bot|
+        say File.read("./help.txt") if matches_bot(bot) && on?(room_id)
+      end
     end
   end
 
   room HQ_ROOM_ID do
     command("!!/whoami") { |bot| say (rand(0...20) == rand(0...20) ? "24601" : BOT_NAME) }
     command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
-    command("!!/help") { |bot| say(File.read('./help.txt')) if matches_bot(bot) }
+    command("!!/help") { |bot| say(File.read('./hq_help.txt')) if matches_bot(bot) }
     command("!!/quota") { |bot| say "#{cli.quota} requests remaining" if matches_bot(bot) }
     command("!!/uptime") { |bot| say Time.at(Time.now - start).strftime("Up %H hours, %M minutes, %S seconds") if matches_bot(bot) }
     # command "!!/logsize" do

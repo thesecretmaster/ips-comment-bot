@@ -1,3 +1,8 @@
-!!/uptime - How long since @Smelly has been restarted
-!!/quota - How much of @Smellys API quota has been used (restarts at 10,000 every 24 hours-ish)
-!!/logsize - The current sizes of the logs. Occasionally there are disk space issues on the server and thesecretmaster needs to destroy some logs. Ping thesecretmaster if any of the numbers are > 2000MB.
+Note: If <botname> is the only argument, it can be ommitted and the command will be seen by all 
+bots. If <botname> is "*" all bots will repond as though they've been mentioned.
+!!/on <botname> - Turns on the bot (if it isn't already on)
+!!/off <botname> - Turns off the bot. When the bot is off, it will only respond to !!/on.
+!!/notify <botname> <type> <on/off> - Turns notifications on or off. Currently there are two types: 
+"regex", and "magic"
+!!/alive <botname> - It'll tell you if it's alive
+!!/reports <botname> - It'll tell you what the current reporting settings are for the current room
