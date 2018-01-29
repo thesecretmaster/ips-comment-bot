@@ -5,6 +5,7 @@ require 'logger'
 require 'time'
 require 'yaml'
 require './db'
+require 'pry-byebug'
 
 IO.write("bot.pid", Process.pid.to_s)
 
@@ -23,7 +24,7 @@ ROOMS = settings['rooms']
 cb.login
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", HQ_ROOM_ID)
 cb.join_room HQ_ROOM_ID
-cb.join_rooms ROOMS
+cb.join_rooms ROOMS #THIS IS THE PROBLEM
 BOT_NAME = settings['name']
 def matches_bot(bot)
   puts "Checking if #{bot} matches #{BOT_NAME}"
@@ -229,7 +230,7 @@ loop do
     msg = "##{post.json["post_id"]} #{user_for(comment.owner)} | [#{type}: #{post.title}](#{post.link}) (score: #{post.score}) | posted #{creation_ts} by #{author}"
     msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
     # msg += " | @Mithrandir (has magic comment)" if !(comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && comment.owner.id == 31) && post.comments.any? { |c| c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && c.user.id.to_i == 31 }
-    msg += " | @Mithrandir (has magic comment)" if has_magic_comment? comment, post
+    msg += " | Has magic comment" if has_magic_comment? comment, post
     cb.say(msg, HQ_ROOM_ID)
 
     report_text = report(post.type, comment.body_markdown)
