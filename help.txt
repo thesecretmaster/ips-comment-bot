@@ -1,8 +1,7 @@
-Note: If <botname> is the only argument, it can be ommitted and the command will be seen by all 
-bots. If <botname> is "*" all bots will repond as though they've been mentioned.
+Note: If <botname> is the only argument, it can be ommitted and the command will be seen by all bots. If <botname> is "*" all bots will repond as though they've been mentioned.
+
 !!/on <botname> - Turns on the bot (if it isn't already on)
 !!/off <botname> - Turns off the bot. When the bot is off, it will only respond to !!/on.
-!!/notify <botname> <type> <on/off> - Turns notifications on or off. Currently there are two types: 
-"regex", and "magic"
+!!/notify <botname> <type> <on/off> - Turns notifications on or off. Currently there are two types: "regex", and "magic"
 !!/alive <botname> - It'll tell you if it's alive
 !!/reports <botname> - It'll tell you what the current reporting settings are for the current room
