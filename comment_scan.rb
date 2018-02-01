@@ -91,12 +91,16 @@ cb.gen_hooks do
     command("!!/help") { |bot| say(File.read('./hq_help.txt')) if matches_bot(bot) }
     command("!!/quota") { |bot| say "#{cli.quota} requests remaining" if matches_bot(bot) }
     command("!!/uptime") { |bot| say Time.at(Time.now - start).strftime("Up %H hours, %M minutes, %S seconds") if matches_bot(bot) }
-    # command "!!/logsize" do
-    #   say(%w[api_json.log api_raw.log msg.log websocket_raw.log websockets_json.log].map do |log|
-    #     log_file = "./#{log}"
-    #     "#{log}: #{(File.size(log_file).to_f/(1024**2)).round(2)}MB" if File.exist? log_file
-    #   end.join("\n"))
-    # end
+    command "!!/logsize" do |bot|
+      if matches_bot(bot)
+        say(Dir['*.log*'].map do |log|
+          log_file = "./#{log}"
+          fsize, ext = File.size(log_file).to_f/(1024**2), "MB"
+          fsize, ext = File.size(log_file).to_f/(1024**2), "GB" if fsize > 1024
+          "#{log}: #{fsize.round(2)}#{ext}" if File.exist? log_file
+        end.join("\n"))
+      end
+    end
     command("!!/howmany") { |bot| say "I've scanned #{Comment.count} comments" if matches_bot(bot) }
     command "!!/test" do |bot, type, *body|
       if matches_bot(bot)
