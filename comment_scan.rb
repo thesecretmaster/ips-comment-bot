@@ -25,10 +25,10 @@ cb.login
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", HQ_ROOM_ID)
 cb.join_room HQ_ROOM_ID
 cb.join_rooms ROOMS #THIS IS THE PROBLEM
-BOT_NAME = settings['name']
+BOT_NAMES = settings['names'] || Array(settings['name'])
 def matches_bot(bot)
-  puts "Checking if #{bot} matches #{BOT_NAME}"
-  bot.nil? || bot == '*' || bot.downcase == BOT_NAME
+  puts "Checking if #{bot} matches #{BOT_NAMES}"
+  bot.nil? || bot == '*' || BOT_NAMES.include?(bot.downcase)
 end
 
 ROOMS.each do |room_id|
@@ -46,6 +46,16 @@ cb.gen_hooks do
         if matches_bot(bot) && on?(room_id)
           say "Turning off..."
           Room.find_by(room_id: room_id).update(on: false)
+        end
+      end
+      command "!!/whoami" do
+        if on?(room_id)
+          say "I go by #{BOT_NAMES.join(" and ")}"
+        end
+      end
+      command "!!/mode" do |bot|
+        if matches_bot(bot) && on?(room_id)
+          say "I'm in child mode. My parent is in [room #{HQ_ROOM_ID}](https://chat.stackexchange.com/rooms/#{HQ_ROOM_ID})"
         end
       end
       command "!!/on" do |bot|
@@ -86,7 +96,7 @@ cb.gen_hooks do
   end
 
   room HQ_ROOM_ID do
-    command("!!/whoami") { |bot| say (rand(0...20) == rand(0...20) ? "24601" : BOT_NAME) }
+    command("!!/whoami") { |bot| say (rand(0...20) == rand(0...20) ? "24601" : "I go by #{BOT_NAMES.join(" and ")}") }
     command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
     command("!!/help") { |bot| say(File.read('./hq_help.txt')) if matches_bot(bot) }
     command("!!/quota") { |bot| say "#{cli.quota} requests remaining" if matches_bot(bot) }
@@ -148,6 +158,7 @@ cb.gen_hooks do
     command "!!/manscan" do |*args|
       manual_scan += cli.comments(args)
     end
+    command("!!/mode") { |bot| say "I'm in parent mode. I have children in rooms #{ROOMS.map { |rid| "[#{rid}](https://chat.stackexchange.com/rooms/#{rid})"}.join(", ")}" if matches_bot(bot) }
     command("!!/ttscan") { |bot| say "#{sleeptime} seconds remaning until the next scan" if matches_bot(bot) }
   end
 end
