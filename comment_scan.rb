@@ -82,9 +82,6 @@ cb.gen_hooks do
           say "regex_match: #{!!room.regex_match}\nmagic_comment: #{!!room.magic_comment}"
         end
       end
-      command "!!/regexes" do |bot|
-        say(Regex.all.map { |r| "#{r.post_type}: #{r.regex}" }.join("\n")) if matches_bot(bot) && on?(room_id)
-      end
       command "!!/alive" do |bot|
         if matches_bot(bot) && on?(room_id)
           say "I'm alive and well :)"
@@ -97,7 +94,7 @@ cb.gen_hooks do
   end
 
   room HQ_ROOM_ID do
-    command("!!/whoami") { |bot| say (rand(0...20) == rand(0...20) ? "24601" : "I go by #{BOT_NAMES.join(" and ")}") }
+    command("!!/whoami") { say (rand(0...20) == rand(0...20) ? "24601" : "I go by #{BOT_NAMES.join(" and ")}") }
     command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
     command("!!/help") { |bot| say(File.read('./hq_help.txt')) if matches_bot(bot) }
     command("!!/quota") { |bot| say "#{cli.quota} requests remaining" if matches_bot(bot) }
@@ -124,7 +121,7 @@ cb.gen_hooks do
         say "Added regex #{r.regex} for post_type #{r.post_type} with reason '#{r.reason.name}'"
       end
     end
-    command "!!/del" do |bot, type, regex, *reason|
+    command "!!/del" do |bot, type, regex|
       if matches_bot(bot)
         if r = Regex.find_by(post_type: type[0], regex: regex)
           say "Destroyed #{r.regex} (post_type #{r.post_type})!" if r.destroy

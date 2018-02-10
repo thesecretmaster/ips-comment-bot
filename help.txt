@@ -5,3 +5,5 @@ Note: If <botname> is the only argument, it can be ommitted and the command will
 !!/notify <botname> <type> <on/off> - Turns notifications on or off. Currently there are two types: "regex", and "magic"
 !!/alive <botname> - It'll tell you if it's alive
 !!/reports <botname> - It'll tell you what the current reporting settings are for the current room
+!!/mode <botname> - It will tell you where it's parents/children are
+!!/help <botname> - Prints the help page
