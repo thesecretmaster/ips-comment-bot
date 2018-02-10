@@ -21,6 +21,7 @@ cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
 cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
 HQ_ROOM_ID = settings['hq_room_id'].to_i
 ROOMS = settings['rooms']
+IGNORE_USER_IDS = Array(settings['ignore_user_ids'])
 cb.login
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", HQ_ROOM_ID)
 cb.join_room HQ_ROOM_ID
@@ -260,7 +261,7 @@ loop do
     ROOMS.each do |room_id|
       room = Room.find_by(room_id: room_id)
       if room.on
-        if room.on && ((room.magic_comment && has_magic_comment?(comment, post)) || (room.regex_match && report_text))
+        if ((room.magic_comment && has_magic_comment?(comment, post)) || (room.regex_match && report_text)) && !IGNORE_USER_IDS.map(&:to_i).include?(comment.owner.id.to_i)
           cb.say(comment.link, room_id)
           cb.say(msg, room_id)
           cb.say(report_text, room_id) if room.regex_match && report_text
