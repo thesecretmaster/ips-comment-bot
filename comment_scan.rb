@@ -161,6 +161,17 @@ cb.gen_hooks do
     end
     command("!!/mode") { |bot| say "I'm in parent mode. I have children in rooms #{ROOMS.map { |rid| "[#{rid}](https://chat.stackexchange.com/rooms/#{rid})"}.join(", ")}" if matches_bot(bot) }
     command("!!/ttscan") { |bot| say "#{sleeptime} seconds remaning until the next scan" if matches_bot(bot) }
+    command("!!/regexes") do |bot, reason|
+      if matches_bot(bot)
+        reasons = (reason.nil? ? Reason.all : Reason.where(name: reason)).map do |r|
+          regexes = r.regexes.map { |regex| "- #{regex.post_type}: #{regex.regex}" }
+          "#{r.name}:\n#{regexes.join("\n")}"
+        end
+        reasonless_regexes = Regex.where(reason_id: nil).map { |regex| "- #{regex.post_type}: #{regex.regex}" }
+        reasons << "Other Regexes:\n#{reasonless_regexes.join("\n")}"
+        say reasons.join("\n")
+      end
+    end
   end
 end
 
