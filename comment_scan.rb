@@ -121,7 +121,7 @@ cb.gen_hooks do
           compressed[size[:file].split('.')[0]] ||= 0
           compressed[size[:file].split('.')[0]] += size[:size]
         end
-        say((uncompressed + compressed.map { |b, s| "#{b}: #{s.round(2)}MB" }).to_s)
+        say((uncompressed + compressed.map { |b, s| "#{b}: #{s.round(2)}MB" }).join("\n"))
       end
     end
     command("!!/howmany") { |bot| say "I've scanned #{Comment.count} comments" if matches_bot(bot) }
