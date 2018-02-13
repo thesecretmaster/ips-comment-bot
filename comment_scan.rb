@@ -40,6 +40,18 @@ def on?(room_id)
   Room.find_by(room_id: room_id).on
 end
 
+def to_sizes(filenames)
+  filenames.map do |filename|
+    full_name = "./#{filename}"
+    fsize, ext = File.size(full_name).to_f/(1024**2), "MB"
+    {
+      file: filename,
+      size: fsize,
+      ext: ext
+    }
+  end
+end
+
 cb.gen_hooks do
   ROOMS.each do |room_id|
     room room_id do
@@ -98,15 +110,18 @@ cb.gen_hooks do
     command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
     command("!!/help") { |bot| say(File.read('./hq_help.txt')) if matches_bot(bot) }
     command("!!/quota") { |bot| say "#{cli.quota} requests remaining" if matches_bot(bot) }
-    command("!!/uptime") { |bot| say Time.at(Time.now - start).strftime("Up %H hours, %M minutes, %S seconds") if matches_bot(bot) }
+    command("!!/uptime") { |bot| say Time.at(Time.now - start).strftime("Up %j Days, %H hours, %M minutes, %S seconds") if matches_bot(bot) }
     command "!!/logsize" do |bot|
       if matches_bot(bot)
-        say(Dir['*.log*'].map do |log|
-          log_file = "./#{log}"
-          fsize, ext = File.size(log_file).to_f/(1024**2), "MB"
-          fsize, ext = File.size(log_file).to_f/(1024**2), "GB" if fsize > 1024
-          "#{log}: #{fsize.round(2)}#{ext}" if File.exist? log_file
-        end.join("\n"))
+        uncompressed = to_sizes(Dir['*.log']+Dir['*.log.1']).map do |sizes|
+          "#{sizes[:file]}: #{sizes[:size]}#{sizes[:ext]}"
+        end
+        compressed = {}
+        to_sizes(Dir['*.log*.gz']).each do |size|
+          compressed[size[:file].split('.')[0]] ||= 0
+          compressed[size[:file].split('.')[0]] += size[:size]
+        end
+        say(uncompressed + compressed.map { |b, s| "#{b}: #{s.round(2)}MB" })
       end
     end
     command("!!/howmany") { |bot| say "I've scanned #{Comment.count} comments" if matches_bot(bot) }
