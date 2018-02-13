@@ -114,7 +114,7 @@ cb.gen_hooks do
     command "!!/logsize" do |bot|
       if matches_bot(bot)
         uncompressed = to_sizes(Dir['*.log']+Dir['*.log.1']).map do |sizes|
-          "#{sizes[:file]}: #{sizes[:size]}#{sizes[:ext]}"
+          "#{sizes[:file]}: #{sizes[:size].round(2)}#{sizes[:ext]}"
         end
         compressed = {}
         to_sizes(Dir['*.log*.gz']).each do |size|
