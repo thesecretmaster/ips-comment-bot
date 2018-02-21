@@ -1,7 +1,8 @@
 ChatXUsername: chat@bot.com
 ChatXPassword: 'correct horse battery staple'
 APIKey: jaoehoagheraghpreuihgape
-name: ips
-room_id: 63296
-site: interpersonal
-
+site: 'interpersonal'
+names: ['ips', '@ipscommentbot']
+hq_room_id: 63296
+rooms: [63561, 61165]
+ignore_user_ids: [36, 2625, 1599]
