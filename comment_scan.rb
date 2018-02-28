@@ -247,7 +247,6 @@ loop do
   comments = cli.comments(fromdate: @last_creation_date) + manual_scan
   manual_scan = []
   @last_creation_date = comments[0].json["creation_date"].to_i+1 unless comments[0].nil?
-  puts comments.length
   comments.each do |comment|
     author = comment.owner
     base = "https://#{URI(author.link).host}"
