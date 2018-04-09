@@ -4,5 +4,6 @@ APIKey: jaoehoagheraghpreuihgape
 site: 'interpersonal'
 names: ['ips', '@ipscommentbot']
 hq_room_id: 63296
+all_comments: true
 rooms: [63561, 61165]
 ignore_user_ids: [36, 2625, 1599]

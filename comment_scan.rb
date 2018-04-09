@@ -270,7 +270,6 @@ loop do
     creation_ts = ts_for post.json["creation_date"]
     edit_ts = ts_for post.json["last_edit_date"]
     type = post.type[0].upcase
-    cb.say(comment.link, HQ_ROOM_ID)
 
     closed = post.json["close_date"]
 
@@ -278,10 +277,19 @@ loop do
     msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
     # msg += " | @Mithrandir (has magic comment)" if !(comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && comment.owner.id == 31) && post.comments.any? { |c| c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && c.user.id.to_i == 31 }
     msg += " | Has magic comment" if has_magic_comment? comment, post
-    cb.say(msg, HQ_ROOM_ID)
 
     report_text = report(post.type, comment.body_markdown)
-    cb.say(report_text, HQ_ROOM_ID) if report_text
+
+    if settings['all_comments']
+      cb.say(comment.link, HQ_ROOM_ID)
+      cb.say(msg, HQ_ROOM_ID)
+      cb.say(report_text, HQ_ROOM_ID) if report_text
+    elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && !IGNORE_USER_IDS.map(&:to_i).include?(comment.owner.id.to_i)
+      cb.say(comment.link, HQ_ROOM_ID)
+      cb.say(msg, HQ_ROOM_ID)
+      cb.say(report_text, HQ_ROOM_ID) if report_text
+    end
+
 
     ROOMS.each do |room_id|
       room = Room.find_by(room_id: room_id)
