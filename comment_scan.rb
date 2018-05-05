@@ -294,11 +294,11 @@ loop do
     ROOMS.each do |room_id|
       room = Room.find_by(room_id: room_id)
       if room.on
-        if ((room.magic_comment && has_magic_comment?(comment, post)) || (room.regex_match && report_text)) && !IGNORE_USER_IDS.map(&:to_i).include?(comment.owner.id.to_i)
+        if ((room.magic_comment && has_magic_comment?(comment, post)) || (room.regex_match && report_text)) && !IGNORE_USER_IDS.map(&:to_i).include?(comment.owner.id.to_i) && comment.owner.json['user_type'] != 'moderator'
           cb.say(comment.link, room_id)
           cb.say(msg, room_id)
           cb.say(report_text, room_id) if room.regex_match && report_text
-        end 
+        end
       end
     end
     @logger.info "Parsed comment:"
@@ -310,7 +310,7 @@ loop do
     #cb.delete(rval.to_i)
     #cb.say(msg, 63296)
 
-    record_comment(comment)    
+    record_comment(comment)
   end
   sleeptime = 60
   while sleeptime > 0 do sleep 1; sleeptime -= 1 end
