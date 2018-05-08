@@ -131,6 +131,12 @@ cb.gen_hooks do
         say(report(type, body.join(" ")) || "Didn't match any filters")
       end
     end
+    command "!!/howgood" do |bot, type, regex|
+      if matches_bot(bot)
+        num = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment) }
+        say "Matched #{num} comments (#{(num.to_f/Comment.count).round(2)}%)"
+      end
+    end
     command "!!/add" do |bot, type, regex, *reason|
       if matches_bot(bot) && r = Reason.find_or_create_by(name: reason.join(' ')).regexes.create(post_type: type[0], regex: regex)
         say "Added regex #{r.regex} for post_type #{r.post_type} with reason '#{r.reason.name}'"
