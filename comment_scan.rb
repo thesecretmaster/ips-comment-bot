@@ -286,7 +286,7 @@ loop do
     reasons = report_raw(post.type, comment.body_markdown).map(&:reason)
     comment_link = comment.link
     if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
-      comment_link = "☢️⚠️	 [Offensive/Abusive Comment](#{comment_link}) 	⚠️☢️".encode('utf-8')
+      comment_link = "\u{2622}\u{26A0}\u{1F6A8} [Offensive/Abusive Comment](#{comment_link}) \u{2622}\u{26A0}\u{1F6A8}"
     end
 
     msgs = []
@@ -312,14 +312,14 @@ loop do
       end
     end
 
-    if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
-      Thread.new do
-        sleep 60
-        msgs.each do |msg|
-          cb.delete(msg.to_i)
-        end
-      end
-    end
+    # if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
+    #   Thread.new do
+    #     sleep 60
+    #     msgs.each do |msg|
+    #       cb.delete(msg.to_i)
+    #     end
+    #   end
+    # end
 
     @logger.info "Parsed comment:"
     @logger.info "(JSON) #{comment.json}"
