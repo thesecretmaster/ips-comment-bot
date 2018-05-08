@@ -13,6 +13,13 @@ start = Time.now
 manual_scan = []
 sleeptime = 0
 
+message_tracker = []
+=begin
+[
+[[messages, which, are, for, this, comment, db, id], Comment]
+]
+=end
+
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
 post_on_startup = ARGV[0].to_i || 0
@@ -53,8 +60,29 @@ def to_sizes(filenames)
 end
 
 cb.gen_hooks do
+  on_reply_block = proc do |msg|
+    if msg.hash.include? 'parent_id'
+      comment = message_tracker.select { |msg_ids, comment| msg_ids.include?(msg.hash['parent_id'].to_i) }[0][1]
+      case msg.body.split(' ')[1][0..2].downcase
+      when 'tp'
+        comment.tps ||= 0
+        comment.tps += 1
+        say "Regestered as a tp"
+      when 'fp'
+        comment.fps ||= 0
+        comment.fps += 1
+        say "Regesterd as a fp"
+      when 'rude'
+        comment.rude ||= 0
+        comment.rude += 1
+        say "Regiestered as rude"
+      end
+      comment.save
+    end
+  end
   ROOMS.each do |room_id|
     room room_id do
+      on "reply", &on_reply_block
       command "!!/off" do |bot|
         if matches_bot(bot) && on?(room_id)
           say "Turning off..."
@@ -106,6 +134,7 @@ cb.gen_hooks do
   end
 
   room HQ_ROOM_ID do
+    on "reply", &on_reply_block
     command("!!/whoami") { say (rand(0...20) == rand(0...20) ? "24601" : "I go by #{BOT_NAMES.join(" and ")}") }
     command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
     command("!!/help") { |bot| say(File.read('./hq_help.txt')) if matches_bot(bot) }
@@ -133,8 +162,14 @@ cb.gen_hooks do
     end
     command "!!/howgood" do |bot, type, regex|
       if matches_bot(bot)
-        num = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment) }
-        say "Matched #{num} comments (#{(num.to_f/Comment.count).round(2)}%)"
+        type = 'question' if type == 'q'
+        type = 'answer' if type == 'a'
+        if type == 'question' || type == 'answer'
+          num = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
+          say "Matched #{num} comments (#{(num/Comment.count).round(2)}%)"
+        else
+          say "Type must be q/a/question/answer"
+        end
       end
     end
     command "!!/add" do |bot, type, regex, *reason|
@@ -226,10 +261,15 @@ end
 def record_comment(comment)
   return false unless comment.is_a? SE::API::Comment
   c = Comment.new
-  %i[body body_markdown comment_id creation_date edited link post_id post_type score].each do |f|
+  %i[body body_markdown comment_id edited link post_id post_type score].each do |f|
     c.send(:"#{f}=", comment.send(f))
   end
-  c.save unless Comment.exists?(c.attributes.reject { |_k,v| v.nil? })
+  c.se_creation_date = comment.creation_date
+  if Comment.exists?(c.attributes.reject { |_k,v| v.nil? })
+    Comment.find_by(c.attributes.reject { |_k,v| v.nil? })
+  else
+    c.save
+  end
 end
 
 def report_raw(post_type, comment)
@@ -318,6 +358,9 @@ loop do
       end
     end
 
+    message_tracker.push([msgs, record_comment(comment)])
+    message_tracker.pop if message_tracker.length > 30
+
     # if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
     #   Thread.new do
     #     sleep 60
@@ -335,8 +378,6 @@ loop do
     #rval = cb.say(comment.link, 63296)
     #cb.delete(rval.to_i)
     #cb.say(msg, 63296)
-
-    record_comment(comment)
   end
   sleeptime = 60
   while sleeptime > 0 do sleep 1; sleeptime -= 1 end

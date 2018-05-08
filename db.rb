@@ -11,6 +11,11 @@ end
 class Comment < ActiveRecord::Base
   has_one :user, as: :owner
   has_one :user, as: :reply_to_user
+  before_save :update_creation_date
+
+  def update_creation_date
+    update_column('creation_date', Time.at(se_creation_date.to_i).to_datetime)
+  end
 end
 
 class Regex < ActiveRecord::Base

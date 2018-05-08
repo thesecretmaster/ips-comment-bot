@@ -10,13 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180128210503) do
+ActiveRecord::Schema.define(version: 2018_05_08_210635) do
 
   create_table "comments", force: :cascade do |t|
     t.text "body"
     t.text "body_markdown"
     t.integer "comment_id"
-    t.text "creation_date"
+    t.text "se_creation_date"
     t.boolean "edited"
     t.text "link"
     t.integer "owner"
@@ -24,6 +24,10 @@ ActiveRecord::Schema.define(version: 20180128210503) do
     t.text "post_type"
     t.integer "reply_to_user"
     t.integer "score"
+    t.integer "tps"
+    t.integer "fps"
+    t.integer "rude"
+    t.datetime "creation_date"
   end
 
   create_table "reasons", force: :cascade do |t|
