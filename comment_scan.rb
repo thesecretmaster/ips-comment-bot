@@ -286,7 +286,7 @@ loop do
     reasons = report_raw(post.type, comment.body_markdown).map(&:reason)
     comment_link = comment.link
     if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
-      comment_link = "☢️⚠️\u1F6A8#{comment_link}\u1F6A8⚠️☢️".encode('utf-8')
+      comment_link = "☢️⚠️	 [Offensive/Abusive Comment](#{comment_link}) 	⚠️☢️".encode('utf-8')
     end
 
     msgs = []
