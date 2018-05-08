@@ -226,11 +226,15 @@ def record_comment(comment)
   c.save unless Comment.exists?(c.attributes.reject { |_k,v| v.nil? })
 end
 
-def report(post_type, comment)
+def report_raw(post_type, comment)
   regexes = Regex.where(post_type: post_type[0].downcase)
-  matching_regexes = regexes.select do |regex|
+  regexes.select do |regex|
     %r{#{regex.regex}}.match? comment.downcase
   end
+end
+
+def report(post_type, comment)
+  matching_regexes = report_raw(post_type, comment)
   return "Matched regex(es) #{matching_regexes.map { |r| r.reason.nil? ? r.regex : r.reason.name }.uniq }" unless matching_regexes.empty?
 end
 
@@ -279,28 +283,44 @@ loop do
     msg += " | Has magic comment" if has_magic_comment? comment, post
 
     report_text = report(post.type, comment.body_markdown)
-
-    if settings['all_comments']
-      cb.say(comment.link, HQ_ROOM_ID)
-      cb.say(msg, HQ_ROOM_ID)
-      cb.say(report_text, HQ_ROOM_ID) if report_text
-    elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && !IGNORE_USER_IDS.map(&:to_i).include?(comment.owner.id.to_i)
-      cb.say(comment.link, HQ_ROOM_ID)
-      cb.say(msg, HQ_ROOM_ID)
-      cb.say(report_text, HQ_ROOM_ID) if report_text
+    reasons = report_raw(post.type, comment.body_markdown).map(&:reason)
+    comment_link = comment.link
+    if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
+      comment_link = "☢️⚠️\u1F6A8#{comment_link}\u1F6A8⚠️☢️".encode('utf-8')
     end
 
+    msgs = []
+
+    if settings['all_comments']
+      msgs.push cb.say(comment_link, HQ_ROOM_ID)
+      msgs.push cb.say(msg, HQ_ROOM_ID)
+      msgs.push cb.say(report_text, HQ_ROOM_ID) if report_text
+    elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && !IGNORE_USER_IDS.map(&:to_i).include?(comment.owner.id.to_i)
+      msgs.push cb.say(comment_link, HQ_ROOM_ID)
+      msgs.push cb.say(msg, HQ_ROOM_ID)
+      msgs.push cb.say(report_text, HQ_ROOM_ID) if report_text
+    end
 
     ROOMS.each do |room_id|
       room = Room.find_by(room_id: room_id)
       if room.on
         if ((room.magic_comment && has_magic_comment?(comment, post)) || (room.regex_match && report_text)) && !IGNORE_USER_IDS.map(&:to_i).include?(comment.owner.id.to_i) && comment.owner.json['user_type'] != 'moderator'
-          cb.say(comment.link, room_id)
-          cb.say(msg, room_id)
-          cb.say(report_text, room_id) if room.regex_match && report_text
+          msgs.push cb.say(comment_link, room_id)
+          msgs.push cb.say(msg, room_id)
+          msgs.push cb.say(report_text, room_id) if room.regex_match && report_text
         end
       end
     end
+
+    if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
+      Thread.new do
+        sleep 60
+        msgs.each do |msg|
+          cb.delete(msg.to_i)
+        end
+      end
+    end
+
     @logger.info "Parsed comment:"
     @logger.info "(JSON) #{comment.json}"
     @logger.info "(SE::API::Comment) #{comment.inspect}"
