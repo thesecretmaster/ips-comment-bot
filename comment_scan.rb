@@ -292,11 +292,11 @@ loop do
     msgs = []
 
     if settings['all_comments']
-      msgs.push cb.say(comment_link, HQ_ROOM_ID)
+      msgs.push cb.say(comment.link, HQ_ROOM_ID)
       msgs.push cb.say(msg, HQ_ROOM_ID)
       msgs.push cb.say(report_text, HQ_ROOM_ID) if report_text
     elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && !IGNORE_USER_IDS.map(&:to_i).include?(comment.owner.id.to_i)
-      msgs.push cb.say(comment_link, HQ_ROOM_ID)
+      msgs.push cb.say(comment.link, HQ_ROOM_ID)
       msgs.push cb.say(msg, HQ_ROOM_ID)
       msgs.push cb.say(report_text, HQ_ROOM_ID) if report_text
     end
