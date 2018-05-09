@@ -14,7 +14,7 @@ class Comment < ActiveRecord::Base
   before_save :update_creation_date
 
   def update_creation_date
-    update_column('creation_date', Time.at(se_creation_date.to_i).to_datetime)
+    self.creation_date = Time.at(self.se_creation_date.to_i).to_datetime
   end
 end
 
