@@ -281,9 +281,9 @@ def record_comment(comment)
   end
   c.se_creation_date = comment.creation_date
   if Comment.exists?(c.attributes.reject { |_k,v| v.nil? })
-    Comment.find_by(c.attributes.reject { |_k,v| v.nil? })
+    Comment.find_by(c.attributes.reject { |_k,v| v.nil? }).id
   else
-    c.save
+    c.id if c.save
   end
 end
 
