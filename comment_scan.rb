@@ -20,7 +20,7 @@ message_tracker = []
 ]
 =end
 
-@debug_log = Logger.new('ips_debug.log')
+$debug_log = Logger.new('ips_debug.log')
 
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
@@ -65,7 +65,7 @@ cb.gen_hooks do
   on_reply_block = proc do |msg|
     if msg.hash.include? 'parent_id'
       comment = message_tracker.select { |msg_ids, comment| msg_ids.include?(msg.hash['parent_id'].to_i) }
-      @debug_log.info comment
+      $debug_log.info comment
       comment = comment.flatten[1]
       if comment.is_a? Comment
         case msg.body.split(' ')[1][0..2].downcase
