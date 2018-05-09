@@ -80,6 +80,10 @@ cb.gen_hooks do
           comment.fps ||= 0
           comment.fps += 1
           say "Regesterd as a fp"
+        when 'wrongo'
+          comment.fps ||= 0
+          comment.fps += 1
+          say "Registered as WRONGO"
         when 'rude'
           comment.rude ||= 0
           comment.rude += 1
