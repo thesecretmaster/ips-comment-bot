@@ -283,7 +283,7 @@ def record_comment(comment)
   if Comment.exists?(c.attributes.reject { |_k,v| v.nil? })
     Comment.find_by(c.attributes.reject { |_k,v| v.nil? }).id
   else
-    c.id if c.save
+    c if c.save
   end
 end
 
