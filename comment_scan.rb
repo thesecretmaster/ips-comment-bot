@@ -62,7 +62,9 @@ end
 cb.gen_hooks do
   on_reply_block = proc do |msg|
     if msg.hash.include? 'parent_id'
-      comment = message_tracker.select { |msg_ids, comment| msg_ids.include?(msg.hash['parent_id'].to_i) }[0][1]
+      comment = message_tracker.select { |msg_ids, comment| msg_ids.include?(msg.hash['parent_id'].to_i) }
+      puts comment
+      comment = comment[0][1]
       case msg.body.split(' ')[1][0..2].downcase
       when 'tp'
         comment.tps ||= 0
