@@ -66,7 +66,10 @@ cb.gen_hooks do
     if msg.hash.include? 'parent_id'
       comment = message_tracker.select { |msg_ids, comment| msg_ids.include?(msg.hash['parent_id'].to_i) }
       $debug_log.info comment
-      comment = comment.flatten[1]
+      comment = comment[0]
+      $debug_log.info comment
+      comment = comment[1]
+      $debug_log.info comment
       if comment.is_a? Comment
         case msg.body.split(' ')[1][0..2].downcase
         when 'tp'
