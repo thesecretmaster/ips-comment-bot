@@ -20,6 +20,8 @@ message_tracker = []
 ]
 =end
 
+@debug_log = Logger.new('ips_debug.log')
+
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
 post_on_startup = ARGV[0].to_i || 0
@@ -63,23 +65,27 @@ cb.gen_hooks do
   on_reply_block = proc do |msg|
     if msg.hash.include? 'parent_id'
       comment = message_tracker.select { |msg_ids, comment| msg_ids.include?(msg.hash['parent_id'].to_i) }
-      puts comment
-      comment = comment[0][1]
-      case msg.body.split(' ')[1][0..2].downcase
-      when 'tp'
-        comment.tps ||= 0
-        comment.tps += 1
-        say "Regestered as a tp"
-      when 'fp'
-        comment.fps ||= 0
-        comment.fps += 1
-        say "Regesterd as a fp"
-      when 'rude'
-        comment.rude ||= 0
-        comment.rude += 1
-        say "Regiestered as rude"
+      @debug_log.info comment
+      comment = comment.flatten[1]
+      if comment.is_a? Comment
+        case msg.body.split(' ')[1][0..2].downcase
+        when 'tp'
+          comment.tps ||= 0
+          comment.tps += 1
+          say "Regestered as a tp"
+        when 'fp'
+          comment.fps ||= 0
+          comment.fps += 1
+          say "Regesterd as a fp"
+        when 'rude'
+          comment.rude ||= 0
+          comment.rude += 1
+          say "Regiestered as rude"
+        end
+        comment.save
+      else
+        say "An error has occured"
       end
-      comment.save
     end
   end
   ROOMS.each do |room_id|
