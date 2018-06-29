@@ -338,11 +338,11 @@ loop do
 
     closed = post.json["close_date"]
 
-    if settings[:perspective_key]
+    if settings['perspective_key']
       uri = URI.parse("https://commentanalyzer.googleapis.com")
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
-      request = Net::HTTP::Post.new("/v1alpha1/comments:analyze?key=#{settings[:perspective_key]}")
+      request = Net::HTTP::Post.new("/v1alpha1/comments:analyze?key=#{settings['perspective_key']}")
       request.add_field('Content-Type', 'application/json')
       request.body = {
         "comment" => {
