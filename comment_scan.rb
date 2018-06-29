@@ -338,7 +338,36 @@ loop do
 
     closed = post.json["close_date"]
 
-    msg = "##{post.json["post_id"]} #{user_for(comment.owner)} | [#{type}: #{post.title}](#{post.link}) #{'[c]' if closed} (score: #{post.score}) | posted #{creation_ts} by #{author}"
+    if settings[:perspective_key]
+      uri = URI.parse("https://commentanalyzer.googleapis.com")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      request = Net::HTTP::Post.new("/v1alpha1/comments:analyze?key=#{settings[:perspective_key]}")
+      request.add_field('Content-Type', 'application/json')
+      request.body = {
+        "comment" => {
+          text: body,
+          type: 'PLAIN_TEXT' # This should eventually be HTML, when perspective supports it
+        },
+        "context" => {}, # Not yet supported
+        "requestedAttributes" => {
+          'TOXICITY' => {
+            scoreType: 'PROBABILITY',
+            scoreThreshold: 0
+          }
+        },
+        "languages" => ["en"],
+        "doNotStore" => true,
+        "sessionId" => '' # Use this if there are multiple bots running
+      }
+      response = JSON.parse(http.request(request))
+
+      toxicity = response["attributeScores"]["TOXICITY"]["summaryScore"]["value"]
+    else
+      toxicity = 'NoKey'
+    end
+
+    msg = "##{post.json["post_id"]} #{user_for(comment.owner)} | [#{type}: #{post.title}](#{post.link}) #{'[c]' if closed} (score: #{post.score}) | posted #{creation_ts} by #{author} | Toxicity #{toxicity}"
     msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
     # msg += " | @Mithrandir (has magic comment)" if !(comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && comment.owner.id == 31) && post.comments.any? { |c| c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && c.user.id.to_i == 31 }
     msg += " | Has magic comment" if has_magic_comment? comment, post
