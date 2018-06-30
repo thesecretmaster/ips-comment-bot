@@ -6,7 +6,8 @@ require 'time'
 require 'yaml'
 require './db'
 require 'pry-byebug'
-require 'httparty'
+
+require_relative 'comment_scan/helpers'
 
 IO.write("bot.pid", Process.pid.to_s)
 
@@ -14,7 +15,7 @@ start = Time.now
 manual_scan = []
 sleeptime = 0
 
-message_tracker = []
+$message_tracker = []
 =begin
 [
 [[messages, which, are, for, this, comment, db, id], Comment]
@@ -46,27 +47,11 @@ ROOMS.each do |room_id|
   Room.find_or_create_by(room_id: room_id)
 end
 
-def on?(room_id)
-  Room.find_by(room_id: room_id).on
-end
-
-def to_sizes(filenames)
-  filenames.map do |filename|
-    full_name = "./#{filename}"
-    fsize, ext = File.size(full_name).to_f/(1024**2), "MB"
-    {
-      file: filename,
-      size: fsize,
-      ext: ext
-    }
-  end
-end
-
 cb.gen_hooks do
   on 'reply' do |msg, room_id|
     begin
       if msg.hash.include? 'parent_id'
-        comment = message_tracker.select { |msg_ids, comment| msg_ids.include?(msg.hash['parent_id'].to_i) }
+        comment = $message_tracker.select { |msg_ids, comment| msg_ids.include?(msg.hash['parent_id'].to_i) }
         $debug_log.info comment
         comment = comment[0]
         $debug_log.info comment
@@ -227,8 +212,15 @@ cb.gen_hooks do
     end
     command("!!/kill") { |bot| `kill -9 $(cat bot.pid)` if matches_bot(bot) }
     command("!!/rev") { |bot| say "Currently at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop}" if matches_bot(bot) }
-    command "!!/manscan" do |*args|
-      manual_scan += cli.comments(args)
+    command "!!/manscan" do |bot, *args|
+      if matches_bot(bot)
+        c = cli.comments(args)
+        if c.empty?
+          say "No comments found for id(s) #{args.join(", ")}"
+        else
+          scan_comments(c, cli: cli, settings: settings, cb: cb)
+        end
+      end
     end
     command("!!/mode") { |bot| say "I'm in parent mode. I have children in rooms #{ROOMS.map { |rid| "[#{rid}](https://chat.stackexchange.com/rooms/#{rid})"}.join(", ")}" if matches_bot(bot) }
     command("!!/ttscan") { |bot| say "#{sleeptime} seconds remaning until the next scan" if matches_bot(bot) }
@@ -253,70 +245,11 @@ comments = cli.comments[0..-1]
 @logger = Logger.new('msg.log')
 @perspective_log = Logger.new('perspective.log')
 
-def ts_for(ts)
-  return "" if ts.nil?
-  ts = (Time.new - Time.at(ts.to_i)).to_i
-  return "" if ts < 0
-  if ts < 60
-    "#{ts} seconds ago"
-  elsif ts/60 < 60
-    "#{ts/60} minutes ago"
-  elsif ts/(60**2) < 60
-    "#{ts/(60**2)} hours ago"
-  else
-    "#{ts/(24*60*60)} days ago"
-  end
-end
+def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('/dev/null'))
+  comments.flatten.each do |comment|
 
-def user_for(author)
-  return "" unless author.is_a? SE::API::User
-  name = author.name
-  link = author.link&.gsub(/(^.*u[sers]{4}?\/\d*)\/.*$/, '\1')&.gsub("/users/", "/u/")
-  rep = author.reputation
-  return "(deleted user)" if name.nil? && link.nil? && rep.nil?
-  "[#{name}](#{link}) (#{rep} rep)"
-end
+    puts "Grab metadata..."
 
-def record_comment(comment)
-  return false unless comment.is_a? SE::API::Comment
-  c = Comment.new
-  %i[body body_markdown comment_id edited link post_id post_type score].each do |f|
-    c.send(:"#{f}=", comment.send(f))
-  end
-  c.se_creation_date = comment.creation_date
-  if Comment.exists?(c.attributes.reject { |_k,v| v.nil? })
-    Comment.find_by(c.attributes.reject { |_k,v| v.nil? })
-  else
-    c if c.save
-  end
-end
-
-def report_raw(post_type, comment)
-  regexes = Regex.where(post_type: post_type[0].downcase)
-  regexes.select do |regex|
-    %r{#{regex.regex}}.match? comment.downcase
-  end
-end
-
-def report(post_type, comment)
-  matching_regexes = report_raw(post_type, comment)
-  return "Matched regex(es) #{matching_regexes.map { |r| r.reason.nil? ? r.regex : r.reason.name }.uniq }" unless matching_regexes.empty?
-end
-
-def has_magic_comment?(comment, post)
-  !comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") &&
-  post.comments.any? do |c|
-    c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31")
-  end
-end
-
-sleep 1 # So we don't get chat errors for 3 messages in a row
-
-loop do
-  comments = cli.comments(fromdate: @last_creation_date) + manual_scan
-  manual_scan = []
-  @last_creation_date = comments[0].json["creation_date"].to_i+1 unless comments[0].nil?
-  comments.each do |comment|
     author = comment.owner
     base = "https://#{URI(author.link).host}"
 
@@ -332,6 +265,8 @@ loop do
     seconds = (Time.new - date).to_i
     ts = seconds < 60 ? "#{seconds} seconds ago" : "#{seconds/60} minutes ago"
 
+    puts "Grab post data..."
+
     post = cli.posts(comment.json["post_id"])[0]
 
     author = user_for post.owner
@@ -342,40 +277,16 @@ loop do
 
     closed = post.json["close_date"]
 
-    if settings['perspective_key']
-      response = HTTParty.post("https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=#{settings['perspective_key']}",
-      :body => {
-          "comment" => {
-            text: body,
-            type: 'PLAIN_TEXT' # This should eventually be HTML, when perspective supports it
-          },
-          "context" => {}, # Not yet supported
-          "requestedAttributes" => {
-            'TOXICITY' => {
-              scoreType: 'PROBABILITY',
-              scoreThreshold: 0
-            }
-          },
-          "languages" => ["en"],
-          "doNotStore" => true,
-          "sessionId" => '' # Use this if there are multiple bots running
-        }.to_json,
-      :headers => { 'Content-Type' => 'application/json' } )
+    toxicity = perspective_scan(body, perspective_key: settings['perspective_key'])
 
-      @perspective_log.info response
-      @perspective_log.info response.dig("attributeScores")
-      @perspective_log.info response.dig("attributeScores", "TOXICITY")
-      @perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore")
-      @perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
-      toxicity = response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
-    else
-      toxicity = 'NoKey'
-    end
+    puts "Compile message..."
 
     msg = "##{post.json["post_id"]} #{user_for(comment.owner)} | [#{type}: #{post.title}](#{post.link}) #{'[c]' if closed} (score: #{post.score}) | posted #{creation_ts} by #{author} | Toxicity #{toxicity}"
     msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
     # msg += " | @Mithrandir (has magic comment)" if !(comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && comment.owner.id == 31) && post.comments.any? { |c| c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && c.user.id.to_i == 31 }
     msg += " | Has magic comment" if has_magic_comment? comment, post
+
+    puts "Check reasons..."
 
     report_text = report(post.type, comment.body_markdown)
     reasons = report_raw(post.type, comment.body_markdown).map(&:reason)
@@ -385,6 +296,8 @@ loop do
     end
 
     msgs = []
+
+    puts "Post chat message..."
 
     if settings['all_comments']
       msgs.push cb.say(comment.link, HQ_ROOM_ID)
@@ -407,8 +320,10 @@ loop do
       end
     end
 
-    message_tracker.push([msgs, record_comment(comment)])
-    message_tracker.pop if message_tracker.length > 30
+    puts "Log to database..."
+
+    $message_tracker.push([msgs, record_comment(comment)])
+    $message_tracker.pop if $message_tracker.length > 30
 
     # if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
     #   Thread.new do
@@ -419,15 +334,26 @@ loop do
     #   end
     # end
 
-    @logger.info "Parsed comment:"
-    @logger.info "(JSON) #{comment.json}"
-    @logger.info "(SE::API::Comment) #{comment.inspect}"
-    @logger.info "Current time: #{Time.new.to_i}"
+    # @logger.info "Parsed comment:"
+    # @logger.info "(JSON) #{comment.json}"
+    # @logger.info "(SE::API::Comment) #{comment.inspect}"
+    # @logger.info "Current time: #{Time.new.to_i}"
 
     #rval = cb.say(comment.link, 63296)
     #cb.delete(rval.to_i)
     #cb.say(msg, 63296)
+
+    puts "Processing complete!"
   end
+end
+
+sleep 1 # So we don't get chat errors for 3 messages in a row
+
+loop do
+  comments = cli.comments(fromdate: @last_creation_date) + manual_scan
+  manual_scan = []
+  @last_creation_date = comments[0].json["creation_date"].to_i+1 unless comments[0].nil?
+  scan_comments(comments, cli: cli, settings: settings, cb: cb)
   sleeptime = 60
   while sleeptime > 0 do sleep 1; sleeptime -= 1 end
 end
