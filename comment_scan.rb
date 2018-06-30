@@ -251,6 +251,7 @@ comments = cli.comments[0..-1]
 @last_creation_date = comments[post_on_startup].json["creation_date"].to_i+1 unless comments[post_on_startup].nil?
 
 @logger = Logger.new('msg.log')
+@perspective_log = Logger.new('perspective.log')
 
 def ts_for(ts)
   return "" if ts.nil?
@@ -361,7 +362,12 @@ loop do
         }.to_json,
       :headers => { 'Content-Type' => 'application/json' } )
 
-      toxicity = response["attributeScores"]["TOXICITY"]["summaryScore"]["value"]
+      @perspective_log.info response
+      @perspective_log.info response.dig("attributeScores")
+      @perspective_log.info response.dig("attributeScores", "TOXICITY")
+      @perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore")
+      @perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
+      toxicity = response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
     else
       toxicity = 'NoKey'
     end
