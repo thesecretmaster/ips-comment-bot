@@ -6,6 +6,7 @@ require 'time'
 require 'yaml'
 require './db'
 require 'pry-byebug'
+require 'httparty'
 
 IO.write("bot.pid", Process.pid.to_s)
 
@@ -94,6 +95,8 @@ cb.gen_hooks do
         say "An error has occured"
       end
     end
+  rescue Exception => e
+    say "Got excpetion `#{e}` trying to accept your feedback"
   end
   ROOMS.each do |room_id|
     room room_id do
