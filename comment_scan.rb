@@ -63,40 +63,42 @@ def to_sizes(filenames)
 end
 
 cb.gen_hooks do
-  on_reply_block = proc do |msg|
-    if msg.hash.include? 'parent_id'
-      comment = message_tracker.select { |msg_ids, comment| msg_ids.include?(msg.hash['parent_id'].to_i) }
-      $debug_log.info comment
-      comment = comment[0]
-      $debug_log.info comment
-      comment = comment[1]
-      $debug_log.info comment
-      if comment.is_a? Comment
-        case msg.body.split(' ')[1][0..2].downcase
-        when 'tp'
-          comment.tps ||= 0
-          comment.tps += 1
-          say "Regestered as a tp"
-        when 'fp'
-          comment.fps ||= 0
-          comment.fps += 1
-          say "Regesterd as a fp"
-        when 'wrongo'
-          comment.fps ||= 0
-          comment.fps += 1
-          say "Registered as WRONGO"
-        when 'rude'
-          comment.rude ||= 0
-          comment.rude += 1
-          say "Regiestered as rude"
+  on_reply_block = proc do |msg, room_id|
+    begin
+      if msg.hash.include? 'parent_id'
+        comment = message_tracker.select { |msg_ids, comment| msg_ids.include?(msg.hash['parent_id'].to_i) }
+        $debug_log.info comment
+        comment = comment[0]
+        $debug_log.info comment
+        comment = comment[1]
+        $debug_log.info comment
+        if comment.is_a? Comment
+          case msg.body.split(' ')[1][0..2].downcase
+          when 'tp'
+            comment.tps ||= 0
+            comment.tps += 1
+            cb.say "Regestered as a tp", room_id
+          when 'fp'
+            comment.fps ||= 0
+            comment.fps += 1
+            cb.say "Regesterd as a fp", room_id
+          when 'wrongo'
+            comment.fps ||= 0
+            comment.fps += 1
+            cb.say "Registered as WRONGO", room_id
+          when 'rude'
+            comment.rude ||= 0
+            comment.rude += 1
+            cb.say "Regiestered as rude", room_id
+          end
+          comment.save
+        else
+          cb.say "An error has occured", room_id
         end
-        comment.save
-      else
-        say "An error has occured"
       end
+    rescue Exception => e
+      cb.say "Got excpetion ```#{e}``` trying to accept your feedback", room_id
     end
-  rescue Exception => e
-    say "Got excpetion `#{e}` trying to accept your feedback"
   end
   ROOMS.each do |room_id|
     room room_id do
