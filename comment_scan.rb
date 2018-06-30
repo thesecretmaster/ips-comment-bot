@@ -339,28 +339,24 @@ loop do
     closed = post.json["close_date"]
 
     if settings['perspective_key']
-      uri = URI.parse("https://commentanalyzer.googleapis.com")
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-      request = Net::HTTP::Post.new("/v1alpha1/comments:analyze?key=#{settings['perspective_key']}")
-      request.add_field('Content-Type', 'application/json')
-      request.body = {
-        "comment" => {
-          text: body,
-          type: 'PLAIN_TEXT' # This should eventually be HTML, when perspective supports it
-        },
-        "context" => {}, # Not yet supported
-        "requestedAttributes" => {
-          'TOXICITY' => {
-            scoreType: 'PROBABILITY',
-            scoreThreshold: 0
-          }
-        },
-        "languages" => ["en"],
-        "doNotStore" => true,
-        "sessionId" => '' # Use this if there are multiple bots running
-      }
-      response = JSON.parse(http.request(request))
+      response = HTTParty.post(@urlstring_to_post.to_str,
+      :body => {
+          "comment" => {
+            text: body,
+            type: 'PLAIN_TEXT' # This should eventually be HTML, when perspective supports it
+          },
+          "context" => {}, # Not yet supported
+          "requestedAttributes" => {
+            'TOXICITY' => {
+              scoreType: 'PROBABILITY',
+              scoreThreshold: 0
+            }
+          },
+          "languages" => ["en"],
+          "doNotStore" => true,
+          "sessionId" => '' # Use this if there are multiple bots running
+        }.to_json,
+      :headers => { 'Content-Type' => 'application/json' } )
 
       toxicity = response["attributeScores"]["TOXICITY"]["summaryScore"]["value"]
     else

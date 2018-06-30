@@ -12,3 +12,4 @@ gem "rake"
 #gem "rugged"#, git: "https://github.com/libgit2/rugged"
 
 gem "pry-byebug"
+gem 'httparty'
