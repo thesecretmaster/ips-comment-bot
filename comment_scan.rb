@@ -102,7 +102,7 @@ cb.gen_hooks do
   end
   ROOMS.each do |room_id|
     room room_id do
-      on "reply" { |msg| on_reply_block.call(msg, room_id) }
+      on("reply") { |msg| on_reply_block.call(msg, room_id) }
       command "!!/off" do |bot|
         if matches_bot(bot) && on?(room_id)
           say "Turning off..."
@@ -154,7 +154,7 @@ cb.gen_hooks do
   end
 
   room HQ_ROOM_ID do
-    on "reply" { |msg| on_reply_block.call(msg, room_id) }
+    on("reply") { |msg| on_reply_block.call(msg, room_id) }
     command("!!/whoami") { say (rand(0...20) == rand(0...20) ? "24601" : "I go by #{BOT_NAMES.join(" and ")}") }
     command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
     command("!!/help") { |bot| say(File.read('./hq_help.txt')) if matches_bot(bot) }
