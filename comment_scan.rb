@@ -339,7 +339,7 @@ loop do
     closed = post.json["close_date"]
 
     if settings['perspective_key']
-      response = HTTParty.post(@urlstring_to_post.to_str,
+      response = HTTParty.post("https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=#{settings['perspective_key']}",
       :body => {
           "comment" => {
             text: body,
