@@ -7,22 +7,13 @@ require 'yaml'
 require './db'
 require 'pry-byebug'
 
+require_relative 'comment_scan/message_collection'
 require_relative 'comment_scan/helpers'
 
 IO.write("bot.pid", Process.pid.to_s)
 
 start = Time.now
-manual_scan = []
 sleeptime = 0
-
-$message_tracker = []
-=begin
-[
-[[messages, which, are, for, this, comment, db, id], Comment]
-]
-=end
-
-$debug_log = Logger.new('ips_debug.log')
 
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
@@ -51,22 +42,18 @@ cb.gen_hooks do
   on 'reply' do |msg, room_id|
     begin
       if msg.hash.include? 'parent_id'
-        comment = $message_tracker.select { |msg_ids, comment| msg_ids.include?(msg.hash['parent_id'].to_i) }
-        $debug_log.info comment
-        comment = comment[0]
-        $debug_log.info comment
-        comment = comment[1]
-        $debug_log.info comment
-        if comment.is_a? Comment
+        comment = MessageCollection::ALL_ROOMS.comment_for(msg.hash['parent_id'].to_i)
+        if !comment.nil?
+          comment = Comment.find_by(comment_id: comment.id) if comment.is_a? SE::API::Comment
           case msg.body.split(' ')[1][0..2].downcase
           when 'tp'
             comment.tps ||= 0
             comment.tps += 1
-            cb.say "Regestered as a tp", room_id
+            cb.say "Registered as a tp", room_id
           when 'fp'
             comment.fps ||= 0
             comment.fps += 1
-            cb.say "Regesterd as a fp", room_id
+            cb.say "Registered as a fp", room_id
           when 'wrongo'
             comment.fps ||= 0
             comment.fps += 1
@@ -74,11 +61,14 @@ cb.gen_hooks do
           when 'rude'
             comment.rude ||= 0
             comment.rude += 1
-            cb.say "Regiestered as rude", room_id
+            cb.say "Registered as rude", room_id
+          else
+            cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
           end
           comment.save
         else
-          cb.say "An error has occured", room_id
+          puts "That was not a report"
+          # cb.say "That was not a report", room_id
         end
       end
     rescue Exception => e
@@ -295,35 +285,34 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
       comment_link = "⚠️☢️\u{1F6A8} [Offensive/Abusive Comment](#{comment_link}) \u{1F6A8}☢️⚠️"
     end
 
-    msgs = []
+    msgs = MessageCollection::ALL_ROOMS
 
     puts "Post chat message..."
 
     if settings['all_comments']
-      msgs.push cb.say(comment.link, HQ_ROOM_ID)
-      msgs.push cb.say(msg, HQ_ROOM_ID)
-      msgs.push cb.say(report_text, HQ_ROOM_ID) if report_text
+      msgs.push comment, cb.say(comment.link, HQ_ROOM_ID)
+      msgs.push comment, cb.say(msg, HQ_ROOM_ID)
+      msgs.push comment, cb.say(report_text, HQ_ROOM_ID) if report_text
     elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && !IGNORE_USER_IDS.map(&:to_i).include?(comment.owner.id.to_i)
-      msgs.push cb.say(comment.link, HQ_ROOM_ID)
-      msgs.push cb.say(msg, HQ_ROOM_ID)
-      msgs.push cb.say(report_text, HQ_ROOM_ID) if report_text
+      msgs.push comment, cb.say(comment.link, HQ_ROOM_ID)
+      msgs.push comment, cb.say(msg, HQ_ROOM_ID)
+      msgs.push comment, cb.say(report_text, HQ_ROOM_ID) if report_text
     end
 
     ROOMS.each do |room_id|
       room = Room.find_by(room_id: room_id)
       if room.on
         if ((room.magic_comment && has_magic_comment?(comment, post)) || (room.regex_match && report_text)) && !IGNORE_USER_IDS.map(&:to_i).include?(comment.owner.id.to_i) && comment.owner.json['user_type'] != 'moderator'
-          msgs.push cb.say(comment_link, room_id)
-          msgs.push cb.say(msg, room_id)
-          msgs.push cb.say(report_text, room_id) if room.regex_match && report_text
+          msgs.push comment, cb.say(comment_link, room_id)
+          msgs.push comment, cb.say(msg, room_id)
+          msgs.push comment, cb.say(report_text, room_id) if room.regex_match && report_text
         end
       end
     end
 
-    puts "Log to database..."
-
-    $message_tracker.push([msgs, record_comment(comment)])
-    $message_tracker.pop if $message_tracker.length > 30
+    if dbcomment = record_comment(comment)
+      MessageCollection::ALL_ROOMS.swap_key(comment, dbcomment)
+    end
 
     # if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
     #   Thread.new do
@@ -350,8 +339,7 @@ end
 sleep 1 # So we don't get chat errors for 3 messages in a row
 
 loop do
-  comments = cli.comments(fromdate: @last_creation_date) + manual_scan
-  manual_scan = []
+  comments = cli.comments(fromdate: @last_creation_date)
   @last_creation_date = comments[0].json["creation_date"].to_i+1 unless comments[0].nil?
   scan_comments(comments, cli: cli, settings: settings, cb: cb)
   sleeptime = 60
