@@ -7,6 +7,10 @@ class MessageCollection
     @messages[comment] ||= []
     @messages[comment].push(msg_ids)
     @messages[comment].flatten!
+    if @messages.length > 200
+      @messages.delete(@messages.keys.last)
+    end
+    @messages
   end
 
   def comment_for(msg_id)
