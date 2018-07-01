@@ -141,6 +141,14 @@ cb.gen_hooks do
         say "Whitelisted users #{uids.join(', ')}"
       end
     end
+    command("!!/unwhitelist") do |bot, *uids|
+      if matches_bot(bot)
+        uids.each do |uid|
+          WhitelistedUser.where(user_id: uid).destroy_all
+        end
+        say "Unwhitelisted users #{uids.join(', ')}"
+      end
+    end
     command("!!/whitelisted") { |bot, *args| say "Current whitelist: #{WhitelistedUser.all.map(&:user_id).join(', ')}" }
     command("!!/quota") { |bot| say "#{cli.quota} requests remaining" if matches_bot(bot) }
     command("!!/uptime") { |bot| say Time.at(Time.now - start).strftime("Up %j Days, %H hours, %M minutes, %S seconds") if matches_bot(bot) }
