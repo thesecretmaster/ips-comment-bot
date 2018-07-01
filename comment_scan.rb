@@ -133,7 +133,15 @@ cb.gen_hooks do
     command("!!/whoami") { say (rand(0...20) == rand(0...20) ? "24601" : "I go by #{BOT_NAMES.join(" and ")}") }
     command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
     command("!!/help") { |bot| say(File.read('./hq_help.txt')) if matches_bot(bot) }
-    command("!!/whitelist") { |bot, uid, *args| WhitelistedUser.create(user_id: uid) if matches_bot(bot) }
+    command("!!/whitelist") do |bot, *uids|
+      if matches_bot(bot)
+        uids.each do |uid|
+          WhitelistedUser.create(user_id: uid)
+        end
+        say "Whitelisted users #{uids.join(', ')}"
+      end
+    end
+    command("!!/whitelisted") { |bot, *args| say "Current whitelist: #{WhitelistedUser.all.map(&:user_id).join(', ')}" }
     command("!!/quota") { |bot| say "#{cli.quota} requests remaining" if matches_bot(bot) }
     command("!!/uptime") { |bot| say Time.at(Time.now - start).strftime("Up %j Days, %H hours, %M minutes, %S seconds") if matches_bot(bot) }
     command "!!/logsize" do |bot|
