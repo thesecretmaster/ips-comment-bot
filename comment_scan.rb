@@ -45,7 +45,7 @@ cb.gen_hooks do
         comment = MessageCollection::ALL_ROOMS.comment_for(msg.hash['parent_id'].to_i)
         if !comment.nil?
           comment = Comment.find_by(comment_id: comment.id) if comment.is_a? SE::API::Comment
-          case msg.body.split(' ')[1][0..2].downcase
+          case msg.body.split(' ')[1].downcase
           when 'tp'
             comment.tps ||= 0
             comment.tps += 1
@@ -62,6 +62,8 @@ cb.gen_hooks do
             comment.rude ||= 0
             comment.rude += 1
             cb.say "Registered as rude", room_id
+          when 'i'
+            # Do nothing. This is for making comments about the comment
           else
             cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
           end
