@@ -28,3 +28,6 @@ end
 
 class Room < ActiveRecord::Base
 end
+
+class WhitelistedUser < ActiveRecord::Base
+end

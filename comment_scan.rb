@@ -23,7 +23,7 @@ cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
 cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
 HQ_ROOM_ID = settings['hq_room_id'].to_i
 ROOMS = settings['rooms']
-IGNORE_USER_IDS = Array(settings['ignore_user_ids'])
+IGNORE_USER_IDS = Array(settings['ignore_user_ids'] || WhitelistedUser.all.map(&:user_id))
 cb.login
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", HQ_ROOM_ID)
 cb.join_room HQ_ROOM_ID
@@ -133,6 +133,7 @@ cb.gen_hooks do
     command("!!/whoami") { say (rand(0...20) == rand(0...20) ? "24601" : "I go by #{BOT_NAMES.join(" and ")}") }
     command("!!/alive") { |bot| say "I'm alive!" if matches_bot(bot) }
     command("!!/help") { |bot| say(File.read('./hq_help.txt')) if matches_bot(bot) }
+    command("!!/whitelist") { |bot, uid, *args| WhitelistedUser.create(user_id: uid) if matches_bot(bot) }
     command("!!/quota") { |bot| say "#{cli.quota} requests remaining" if matches_bot(bot) }
     command("!!/uptime") { |bot| say Time.at(Time.now - start).strftime("Up %j Days, %H hours, %M minutes, %S seconds") if matches_bot(bot) }
     command "!!/logsize" do |bot|

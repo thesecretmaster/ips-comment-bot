@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_05_08_210635) do
+ActiveRecord::Schema.define(version: 2018_07_01_180238) do
 
   create_table "comments", force: :cascade do |t|
     t.text "body"
@@ -56,6 +56,10 @@ ActiveRecord::Schema.define(version: 2018_05_08_210635) do
     t.integer "reputation"
     t.integer "user_id"
     t.text "type"
+  end
+
+  create_table "whitelisted_users", force: :cascade do |t|
+    t.bigint "user_id"
   end
 
 end
