@@ -45,15 +45,16 @@ cb.gen_hooks do
         comment = MessageCollection::ALL_ROOMS.comment_for(msg.hash['parent_id'].to_i)
         if !comment.nil?
           comment = Comment.find_by(comment_id: comment.id) if comment.is_a? SE::API::Comment
+          cur_score = "Currently marked #{comment.tps}tps/#{comment.fps}fps"
           case msg.body.split(' ')[1].downcase
           when 'tp'
             comment.tps ||= 0
             comment.tps += 1
-            cb.say "Registered as a tp", room_id
+            cb.say "Marked this comment as caught correctly (tp). #{cur_score}", room_id
           when 'fp'
             comment.fps ||= 0
             comment.fps += 1
-            cb.say "Registered as a fp", room_id
+            cb.say "Marked this comment as caught incorrectly (fp) #{cur_score}", room_id
           when 'wrongo'
             comment.fps ||= 0
             comment.fps += 1
