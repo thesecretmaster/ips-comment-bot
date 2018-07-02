@@ -45,7 +45,7 @@ cb.gen_hooks do
         comment = MessageCollection::ALL_ROOMS.comment_for(msg.hash['parent_id'].to_i)
         if !comment.nil?
           comment = Comment.find_by(comment_id: comment.id) if comment.is_a? SE::API::Comment
-          cur_score = "Currently marked #{comment.tps}tps/#{comment.fps}fps"
+          cur_score = "Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps"
           case msg.body.split(' ')[1].downcase
           when 'tp'
             comment.tps ||= 0
@@ -65,6 +65,10 @@ cb.gen_hooks do
             cb.say "Registered as rude", room_id
           when 'i'
             # Do nothing. This is for making comments about the comment
+          when 'dbid'
+            cb.say "This comment has id #{comment.id} in the database", room_id
+          when 'feedbacks'
+            cb.say cur_score, room_id
           else
             cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
           end
@@ -331,7 +335,7 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
     end
 
     if dbcomment = record_comment(comment)
-      MessageCollection::ALL_ROOMS.swap_key(comment, dbcomment)
+      # MessageCollection::ALL_ROOMS.swap_key(comment, dbcomment)
     end
 
     # if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
