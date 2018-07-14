@@ -6,11 +6,12 @@ ActiveRecord::Base.establish_connection(
 )
 
 class User < ActiveRecord::Base
+  has_many :comments, foreign_key: 'owner'
 end
 
 class Comment < ActiveRecord::Base
-  has_one :user, as: :owner
-  has_one :user, as: :reply_to_user
+  belongs_to :owner, class_name: "User"
+  # has_one :user, as: :reply_to_user
   before_save :update_creation_date
 
   def update_creation_date

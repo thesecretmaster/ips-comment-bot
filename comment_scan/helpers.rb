@@ -51,7 +51,17 @@ def record_comment(comment)
   if Comment.exists?(c.attributes.reject { |_k,v| v.nil? })
     Comment.find_by(c.attributes.reject { |_k,v| v.nil? })
   else
-    c if c.save
+    api_u = comment.owner
+    u = User.find_or_create_by(user_id: api_u.id)
+    u.update(display_name: api_u.name, reputation: api_u.reputation, link: api_u.link, user_type: api_u.type)
+    c.owner = u
+    puts u.inspect
+    puts c.inspect
+    if c.save
+      c
+    else
+      puts c.errors.full_messages
+    end
   end
 end
 

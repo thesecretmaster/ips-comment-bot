@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_07_01_180238) do
+ActiveRecord::Schema.define(version: 2018_07_14_215151) do
 
   create_table "comments", force: :cascade do |t|
     t.text "body"
@@ -19,7 +19,7 @@ ActiveRecord::Schema.define(version: 2018_07_01_180238) do
     t.text "se_creation_date"
     t.boolean "edited"
     t.text "link"
-    t.integer "owner"
+    t.integer "owner_id"
     t.integer "post_id"
     t.text "post_type"
     t.integer "reply_to_user"
@@ -55,7 +55,7 @@ ActiveRecord::Schema.define(version: 2018_07_01_180238) do
     t.text "profile_image"
     t.integer "reputation"
     t.integer "user_id"
-    t.text "type"
+    t.text "user_type"
   end
 
   create_table "whitelisted_users", force: :cascade do |t|
