@@ -21,6 +21,12 @@ class MessageCollection
     m.first[0]
   end
 
+  def msg_ids_for(comment)
+    @messages[comment].flatten
+  end
+
+  alias_method :message_ids_for, :msg_ids_for
+
   def swap_key(key, nkey)
     @messages[nkey] = @messages.delete(key)
   end

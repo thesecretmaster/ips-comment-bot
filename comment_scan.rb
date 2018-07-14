@@ -42,7 +42,8 @@ cb.gen_hooks do
   on 'reply' do |msg, room_id|
     begin
       if msg.hash.include? 'parent_id'
-        comment = MessageCollection::ALL_ROOMS.comment_for(msg.hash['parent_id'].to_i)
+        mc_comment = MessageCollection::ALL_ROOMS.comment_for(msg.hash['parent_id'].to_i)
+        comment = mc_comment
         if !comment.nil?
           comment = Comment.find_by(comment_id: comment.id) if comment.is_a? SE::API::Comment
           case msg.body.split(' ')[1].downcase
@@ -68,6 +69,10 @@ cb.gen_hooks do
             cb.say "This comment has id #{comment.id} in the database", room_id
           when 'feedbacks'
             cb.say "Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps", room_id
+          when 'del'
+            MessageCollection::ALL_ROOMS.message_ids_for(mc_comment)[3..-1].each do |msg_id|
+              cb.delete(msg_id)
+            end
           else
             cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
           end
