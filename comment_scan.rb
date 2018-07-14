@@ -338,7 +338,7 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
       end
     end
 
-    if dbcomment = record_comment(comment)
+    if dbcomment = record_comment(comment, perspective_score: toxicity)
       # MessageCollection::ALL_ROOMS.swap_key(comment, dbcomment)
     end
 

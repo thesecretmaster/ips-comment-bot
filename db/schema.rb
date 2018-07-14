@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_07_14_215151) do
+ActiveRecord::Schema.define(version: 2018_07_14_215840) do
 
   create_table "comments", force: :cascade do |t|
     t.text "body"
@@ -28,6 +28,7 @@ ActiveRecord::Schema.define(version: 2018_07_14_215151) do
     t.integer "fps"
     t.integer "rude"
     t.datetime "creation_date"
+    t.decimal "perspective_score", precision: 15, scale: 10
   end
 
   create_table "reasons", force: :cascade do |t|
