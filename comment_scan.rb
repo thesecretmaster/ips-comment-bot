@@ -321,7 +321,7 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
       msgs.push comment, cb.say(comment.link, HQ_ROOM_ID)
       msgs.push comment, cb.say(msg, HQ_ROOM_ID)
       msgs.push comment, cb.say(report_text, HQ_ROOM_ID) if report_text
-    elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && (!IGNORE_USER_IDS.map(&:to_i)+post.owner.id).flatten.include?(comment.owner.id.to_i)
+    elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && !(IGNORE_USER_IDS.map(&:to_i)+post.owner.id).flatten.include?(comment.owner.id.to_i)
       msgs.push comment, cb.say(comment.link, HQ_ROOM_ID)
       msgs.push comment, cb.say(msg, HQ_ROOM_ID)
       msgs.push comment, cb.say(report_text, HQ_ROOM_ID) if report_text
@@ -330,7 +330,7 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
     ROOMS.each do |room_id|
       room = Room.find_by(room_id: room_id)
       if room.on
-        if ((room.magic_comment && has_magic_comment?(comment, post)) || (room.regex_match && report_text)) && !IGNORE_USER_IDS.map(&:to_i).include?(comment.owner.id.to_i) && comment.owner.json['user_type'] != 'moderator'
+        if ((room.magic_comment && has_magic_comment?(comment, post)) || (room.regex_match && report_text)) && !(IGNORE_USER_IDS.map(&:to_i)+post.owner.id).map(&:to_i).include?(comment.owner.id.to_i) && comment.owner.json['user_type'] != 'moderator'
           msgs.push comment, cb.say(comment_link, room_id)
           msgs.push comment, cb.say(msg, room_id)
           msgs.push comment, cb.say(report_text, room_id) if room.regex_match && report_text
