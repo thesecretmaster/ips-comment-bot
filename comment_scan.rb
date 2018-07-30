@@ -186,8 +186,10 @@ cb.gen_hooks do
         type = 'question' if type == 'q'
         type = 'answer' if type == 'a'
         if type == 'question' || type == 'answer'
-          num = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
-          say "Matched #{num} comments (#{(num/Comment.count).round(2)}%)"
+          tps = Comment.where(post_type: type).where("tps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
+          fps = Comment.where(post_type: type).where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
+          total = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
+          say "Matched #{tps} tp comments (#{(tps/Comment.where("tps >= ?", 1).count.round(2)}%)\nMatched #{fps} fp comments (#{(fps/Comment.where("fps >= ?", 1).count).round(2)}%)\nMatched #{total} comments (#{(total/Comment.count).round(2)}%)"
         else
           say "Type must be q/a/question/answer"
         end
