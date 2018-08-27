@@ -190,14 +190,14 @@ cb.gen_hooks do
           fps = Comment.where(post_type: type).where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
           total = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
           tp_msg = [
-            "#{(tps/Comment.where("tps >= ?", 1).count).round(8)}% of all tp comments",
-            "#{(tps/total).round(8)}% of matched comments"
+            "#{(tps*100/Comment.where("tps >= ?", 1).count).round(8)}% of all tp comments",
+            "#{(tps*100/total).round(8)}% of matched comments"
           ].join(', ')
           fp_msg = [
-            "#{(fps/Comment.where("fps >= ?", 1).count).round(8)}% of all fp comments",
-            "#{(fps/total).round(8)}% of matched comments"
+            "#{(fps*100/Comment.where("fps >= ?", 1).count).round(8)}% of all fp comments",
+            "#{(fps*100/total).round(8)}% of matched comments"
           ].join(', ')
-          say "Matched #{tps} tp comments (#{tp_msg})\nMatched #{fps} fp comments (#{fp_msg})\nMatched #{total} comments (#{(total/Comment.count).round(8)}%)"
+          say "Matched #{tps} tp comments (#{tp_msg})\nMatched #{fps} fp comments (#{fp_msg})\nMatched #{total} comments (#{(total*100/Comment.count).round(8)}%)"
         else
           say "Type must be q/a/question/answer"
         end
