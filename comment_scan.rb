@@ -194,7 +194,7 @@ cb.gen_hooks do
             "#{(tps/total).round(8)}% of matched comments"
           ].join(', ')
           fp_msg = [
-            "#{(fps/Comment.where("tps >= ?", 1).count).round(8)}% of all fp comments",
+            "#{(fps/Comment.where("fps >= ?", 1).count).round(8)}% of all fp comments",
             "#{(fps/total).round(8)}% of matched comments"
           ].join(', ')
           say "Matched #{tps} tp comments (#{tp_msg})\nMatched #{fps} fp comments (#{fp_msg})\nMatched #{total} comments (#{(total/Comment.count).round(8)}%)"
