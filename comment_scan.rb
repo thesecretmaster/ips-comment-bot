@@ -200,17 +200,17 @@ cb.gen_hooks do
           tp_msg = [ #Generate tp line
             'tp'.center(6),
             tps.round(0).to_s.center(11),
-            "#{tps*100/total).round(8)}%".center(14),
-            "#{tps*100/Comment.where("tps >= ?", 1).count).round(8)}%".center(15),
-            "#{tps*100/Comment.count).round(8)}%".center(18),
+            "#{(tps*100/total).round(8)}%".center(14),
+            "#{(tps*100/Comment.where("tps >= ?", 1).count).round(8)}%".center(15),
+            "#{(tps*100/Comment.count).round(8)}%".center(18),
           ].join('|')
 
           fp_msg = [ #Generate fp line
             'fp'.center(6),
             fps.round(0).to_s.center(11),
-            "#{fps*100/total).round(8)}%".center(14),
-            "#{fps*100/Comment.where("fps >= ?", 1).count).round(8)}%".center(15),
-            "#{fps*100/Comment.count).round(8)}%".center(18),
+            "#{(fps*100/total).round(8)}%".center(14),
+            "#{(fps*100/Comment.where("fps >= ?", 1).count).round(8)}%".center(15),
+            "#{(fps*100/Comment.count).round(8)}%".center(18),
           ].join('|')
 
           total_msg = [ #Generate total line
