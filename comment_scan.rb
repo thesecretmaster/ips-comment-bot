@@ -195,15 +195,39 @@ cb.gen_hooks do
             fps = Comment.where(post_type: type).where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
             total = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
           end
-          tp_msg = [
-            "#{(tps*100/Comment.where("tps >= ?", 1).count).round(8)}% of all tp comments",
-            "#{(tps*100/total).round(8)}% of matched comments"
-          ].join(', ')
-          fp_msg = [
-            "#{(fps*100/Comment.where("fps >= ?", 1).count).round(8)}% of all fp comments",
-            "#{(fps*100/total).round(8)}% of matched comments"
-          ].join(', ')
-          say "Matched #{tps} tp comments (#{tp_msg})\nMatched #{fps} fp comments (#{fp_msg})\nMatched #{total} comments (#{(total*100/Comment.count).round(8)}%)"
+          
+          
+          tp_msg = [ #Generate tp line
+            'tp'.center(6),
+            tps.round(0).to_s.center(11),
+            "#{tps*100/total).round(8)}%".center(14),
+            "#{tps*100/Comment.where("tps >= ?", 1).count).round(8)}%".center(15),
+            "#{tps*100/Comment.count).round(8)}%".center(18),
+          ].join('|')
+
+          fp_msg = [ #Generate fp line
+            'fp'.center(6),
+            fps.round(0).to_s.center(11),
+            "#{fps*100/total).round(8)}%".center(14),
+            "#{fps*100/Comment.where("fps >= ?", 1).count).round(8)}%".center(15),
+            "#{fps*100/Comment.count).round(8)}%".center(18),
+          ].join('|')
+
+          total_msg = [ #Generate total line
+            'Total'.center(6),
+            total.round(0).to_s.center(11),
+            '-'.center(14),
+            '-'.center(15),
+            "#{total*100/Comment.count).round(8)}%".center(18),
+          ].join('|')
+
+          #Generate header line
+          header = " Type | # Matched | % of Matched | % of all type | % of ALL comments"
+
+          final_output = [ #Add 4 spaces for formatting and newlines
+            header, '-'*68, tp_msg, fp_msg, total_msg
+          ].join("\n    ")
+          say "    #{final_output}"
         else
           say "Type must be q/a/question/answer/*"
         end
