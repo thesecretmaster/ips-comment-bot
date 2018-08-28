@@ -222,7 +222,7 @@ cb.gen_hooks do
           ].join('|')
 
           #Generate header line
-          header = " Type | # Matched | % of Matched | % of all type | % of ALL comments"
+          header = " Type | # Matched | % of Matched | % of All Type | % of ALL Comments"
 
           final_output = [ #Add 4 spaces for formatting and newlines
             header, '-'*68, tp_msg, fp_msg, total_msg
