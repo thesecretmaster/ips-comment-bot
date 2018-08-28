@@ -218,7 +218,7 @@ cb.gen_hooks do
             total.round(0).to_s.center(11),
             '-'.center(14),
             '-'.center(15),
-            "#{total*100/Comment.count).round(8)}%".center(18),
+            "#{(total*100/Comment.count).round(8)}%".center(18),
           ].join('|')
 
           #Generate header line
