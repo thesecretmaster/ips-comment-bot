@@ -311,7 +311,7 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
 
     closed = post.json["close_date"]
 
-    toxicity = perspective_scan(body, perspective_key: settings['perspective_key'])
+    toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
 
     puts "Compile message..."
 
@@ -319,6 +319,7 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
     msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
     # msg += " | @Mithrandir (has magic comment)" if !(comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && comment.owner.id == 31) && post.comments.any? { |c| c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") && c.user.id.to_i == 31 }
     msg += " | Has magic comment" if has_magic_comment? comment, post
+    msg += " | High toxicity" if toxicity >= 0.7
 
     puts "Check reasons..."
 
@@ -337,6 +338,7 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
       msgs.push comment, cb.say(comment.link, HQ_ROOM_ID)
       msgs.push comment, cb.say(msg, HQ_ROOM_ID)
       msgs.push comment, cb.say(report_text, HQ_ROOM_ID) if report_text
+      # To be totally honest, maintaining this is not worth it to me right now, so I'm gonna stop working on this setting
     elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).flatten.include?(comment.owner.id.to_i)
       msgs.push comment, cb.say(comment.link, HQ_ROOM_ID)
       msgs.push comment, cb.say(msg, HQ_ROOM_ID)
@@ -346,7 +348,14 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
     ROOMS.each do |room_id|
       room = Room.find_by(room_id: room_id)
       if room.on
-        if ((room.magic_comment && has_magic_comment?(comment, post)) || (room.regex_match && report_text)) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(comment.owner.id.to_i) && comment.owner.json['user_type'] != 'moderator'
+        should_post_message = (
+                                (room.magic_comment && has_magic_comment?(comment, post)) ||
+                                (room.regex_match && report_text) ||
+                                toxicity >= 0.7 # I should add a room property for this
+                              ) &&
+                              !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(comment.owner.id.to_i) &&
+                              comment.owner.json['user_type'] != 'moderator'
+        if should_post_message
           msgs.push comment, cb.say(comment_link, room_id)
           msgs.push comment, cb.say(msg, room_id)
           msgs.push comment, cb.say(report_text, room_id) if room.regex_match && report_text
