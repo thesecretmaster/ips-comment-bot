@@ -38,7 +38,7 @@ def percent_str(numerator, denominator)
   if denominator == 0
     return '-'
   end
-  return "#{(numberator*100/denominator).round(8)}%"
+  return "#{(numerator*100/denominator).round(8)}%"
 end
 
 ROOMS.each do |room_id|
