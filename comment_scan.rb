@@ -34,13 +34,6 @@ def matches_bot(bot)
   bot.nil? || bot == '*' || BOT_NAMES.include?(bot.downcase)
 end
 
-def percent_str(numerator, denominator)
-  if denominator == 0
-    return '-'
-  end
-  return "#{(numerator*100/denominator).round(8)}%"
-end
-
 ROOMS.each do |room_id|
   Room.find_or_create_by(room_id: room_id)
 end
