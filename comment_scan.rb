@@ -34,6 +34,13 @@ def matches_bot(bot)
   bot.nil? || bot == '*' || BOT_NAMES.include?(bot.downcase)
 end
 
+def percent_str(numerator, denominator)
+  if denominator == 0
+    return '-'
+  end
+  return "#{(numberator*100/denominator).round(8)}%"
+end
+
 ROOMS.each do |room_id|
   Room.find_or_create_by(room_id: room_id)
 end
@@ -200,17 +207,17 @@ cb.gen_hooks do
           tp_msg = [ #Generate tp line
             'tp'.center(6),
             tps.round(0).to_s.center(11),
-            "#{(tps*100/total).round(8)}%".center(14),
-            "#{(tps*100/Comment.where("tps >= ?", 1).count).round(8)}%".center(15),
-            "#{(tps*100/Comment.count).round(8)}%".center(18),
+            percent_str(tps, total).center(14),
+            percent_str(tps, Comment.where("tps >= ?", 1).count).center(15),
+	    percent_str(tps, Comment.count).center(18),
           ].join('|')
 
           fp_msg = [ #Generate fp line
             'fp'.center(6),
             fps.round(0).to_s.center(11),
-            "#{(fps*100/total).round(8)}%".center(14),
-            "#{(fps*100/Comment.where("fps >= ?", 1).count).round(8)}%".center(15),
-            "#{(fps*100/Comment.count).round(8)}%".center(18),
+            percent_str(fps, total).center(14),
+            percent_str(fps, Comment.where("fps >= ?", 1).count).center(15),
+	    percent_str(fps, Comment.count).center(18),
           ].join('|')
 
           total_msg = [ #Generate total line
@@ -218,7 +225,7 @@ cb.gen_hooks do
             total.round(0).to_s.center(11),
             '-'.center(14),
             '-'.center(15),
-            "#{(total*100/Comment.count).round(8)}%".center(18),
+	    percent_str(total, Comment.count).center(18),
           ].join('|')
 
           #Generate header line
