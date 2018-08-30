@@ -202,7 +202,7 @@ cb.gen_hooks do
             tps.round(0).to_s.center(11),
             percent_str(tps, total).center(14),
             percent_str(tps, Comment.where("tps >= ?", 1).count).center(15),
-	    percent_str(tps, Comment.count).center(18),
+            percent_str(tps, Comment.count).center(18),
           ].join('|')
 
           fp_msg = [ #Generate fp line
@@ -210,7 +210,7 @@ cb.gen_hooks do
             fps.round(0).to_s.center(11),
             percent_str(fps, total).center(14),
             percent_str(fps, Comment.where("fps >= ?", 1).count).center(15),
-	    percent_str(fps, Comment.count).center(18),
+            percent_str(fps, Comment.count).center(18),
           ].join('|')
 
           total_msg = [ #Generate total line
@@ -218,7 +218,7 @@ cb.gen_hooks do
             total.round(0).to_s.center(11),
             '-'.center(14),
             '-'.center(15),
-	    percent_str(total, Comment.count).center(18),
+            percent_str(total, Comment.count).center(18),
           ].join('|')
 
           #Generate header line
