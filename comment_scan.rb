@@ -186,14 +186,15 @@ cb.gen_hooks do
         type = 'question' if type == 'q'
         type = 'answer' if type == 'a'
         if %w[question answer *].include? type
+          content = comment.body_markdown.downcase
           if type == '*'
-            tps = Comment.where("tps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
-            fps = Comment.where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
-            total = Comment.count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
+            tps = Comment.where("tps >= ?", 1).count { |comment| %r{#{regex}}.match(content) }.to_f
+            fps = Comment.where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(content) }.to_f
+            total = Comment.count { |comment| %r{#{regex}}.match(content) }.to_f
           else
-            tps = Comment.where(post_type: type).where("tps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
-            fps = Comment.where(post_type: type).where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
-            total = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
+            tps = Comment.where(post_type: type).where("tps >= ?", 1).count { |comment| %r{#{regex}}.match(content) }.to_f
+            fps = Comment.where(post_type: type).where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(content) }.to_f
+            total = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(content) }.to_f
           end
           
           
