@@ -2,8 +2,8 @@ Note: If <botname> is the only argument, it can be ommitted and the command will
 
 !!/alive <botname> - It'll tell you if it's alive
 !!/logsize <botname> - The current sizes of the logs. Occasionally there are disk space issues on the server and thesecretmaster needs to destroy some logs. Ping thesecretmaster if any of the numbers are > 2000MB.
-!!/quota <botname> - How much of @Smellys API quota has been used (restarts at 10,000 every 24 hours-ish)
-!!/uptime <botname> - How long since @Smelly has been restarted
+!!/quota <botname> - How much of bot's API quota has been used (restarts at 10,000 every 24 hours-ish)
+!!/uptime <botname> - How long since bot has been restarted
 !!/whoami - Prints the name(s) that the bot responds to
 !!/help <botname> - Prints this help page
 !!/howmany <botname> - Prints the number of comments scanned by the bot
