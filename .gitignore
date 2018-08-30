@@ -5,4 +5,5 @@ init.sh
 db/db.sqlite3
 kill.sh
 bot.pid
-Gemfile.lock
+cookies.yml
+

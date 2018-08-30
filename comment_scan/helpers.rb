@@ -1,5 +1,6 @@
 require_relative '../db.rb'
 require 'httparty'
+require 'htmlentities'
 
 def on?(room_id)
   Room.find_by(room_id: room_id).on
@@ -45,7 +46,9 @@ def record_comment(comment, perspective_score:)
   return false unless comment.is_a? SE::API::Comment
   c = Comment.new
   %i[body body_markdown comment_id edited link post_id post_type score].each do |f|
-    c.send(:"#{f}=", comment.send(f))
+    value = comment.send(f)
+    value = HTMLEntities.new.decode(value) if %i[body body_markdown].include? f
+    c.send(:"#{f}=", value)
   end
   c.perspective_score = perspective_score
   c.se_creation_date = comment.creation_date

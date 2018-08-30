@@ -24,7 +24,7 @@ cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
 HQ_ROOM_ID = settings['hq_room_id'].to_i
 ROOMS = settings['rooms']
 IGNORE_USER_IDS = Array(settings['ignore_user_ids'] || WhitelistedUser.all.map(&:user_id))
-cb.login
+cb.login(cookie_file: 'cookies.yml')
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", HQ_ROOM_ID)
 cb.join_room HQ_ROOM_ID
 cb.join_rooms ROOMS #THIS IS THE PROBLEM
@@ -187,13 +187,13 @@ cb.gen_hooks do
         type = 'answer' if type == 'a'
         if %w[question answer *].include? type
           if type == '*'
-            tps = Comment.where("tps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
-            fps = Comment.where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
-            total = Comment.count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
+            tps = Comment.where("tps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
+            fps = Comment.where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
+            total = Comment.count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
           else
-            tps = Comment.where(post_type: type).where("tps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
-            fps = Comment.where(post_type: type).where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
-            total = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown) }.to_f
+            tps = Comment.where(post_type: type).where("tps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
+            fps = Comment.where(post_type: type).where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
+            total = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
           end
           
           
