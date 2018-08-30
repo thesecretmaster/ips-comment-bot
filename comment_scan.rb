@@ -24,7 +24,7 @@ cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
 HQ_ROOM_ID = settings['hq_room_id'].to_i
 ROOMS = settings['rooms']
 IGNORE_USER_IDS = Array(settings['ignore_user_ids'] || WhitelistedUser.all.map(&:user_id))
-cb.login
+cb.login(cookie_file: 'cookies.yml')
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", HQ_ROOM_ID)
 cb.join_room HQ_ROOM_ID
 cb.join_rooms ROOMS #THIS IS THE PROBLEM
