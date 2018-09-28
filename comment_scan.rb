@@ -196,7 +196,6 @@ cb.gen_hooks do
             total = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
           end
           
-          
           tp_msg = [ #Generate tp line
             'tp'.center(6),
             tps.round(0).to_s.center(11),
@@ -339,6 +338,10 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
 
     toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
 
+    #Grab internal to find TP/FP. Will return nil if this comment hasn't
+    # been registered (if this scan isn't done from manscan)
+    mc_comment = Comment.find_by(comment_id: comment.json["comment_id"])
+
     puts "Compile message..."
 
     msg = "##{post.json["post_id"]} #{user_for(comment.owner)} | [#{type}: #{post.title}](#{post.link}) #{'[c]' if closed} (score: #{post.score}) | posted #{creation_ts} by #{author} | Toxicity #{toxicity}"
@@ -347,6 +350,8 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
     msg += " | Has magic comment" if has_magic_comment? comment, post
     msg += " | High toxicity" if toxicity >= 0.7
     msg += " | Comment on inactive post" if post_inactive
+    #If we've scanned this comment before, also print tp/fp count
+    msg += " | tps/fps: " + mc_comment.tps.to_i.to_s + "/" + mc_comment.fps.to_i.to_s if mc_comment
 
     puts "Check reasons..."
 
