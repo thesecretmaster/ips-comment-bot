@@ -17,3 +17,4 @@ Note: If <botname> is the only argument, it can be ommitted and the command will
 !!/mode <botname> - Lists the current bot mode (parent/child) and the parent/child rooms
 !!/ttscan <botname> - Prints the time until the next poll of the API
 !!/regexes <botname> - Lists all the regexes in the bot
+!!/manscan <botname> <comment_id's> - Re-report comments with <comment_id's>. <comment_id's> should be a space seperated list of ID's
