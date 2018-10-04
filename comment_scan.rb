@@ -494,7 +494,7 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
                                 toxicity >= 0.7 || # I should add a room property for this
                                 post_inactive # And this
                               ) && should_post_matches &&
-                              (Array(post).any? && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(comment.owner.id.to_i)) &&
+                              (!isPostDeleted(cli, comment["post_id"]) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(comment.owner.id.to_i)) &&
                               user['user_type'] != 'moderator'
         if should_post_message
           msgs.push comment, cb.say(comment_link, room_id)
