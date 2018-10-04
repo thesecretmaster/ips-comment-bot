@@ -43,7 +43,6 @@ cb.gen_hooks do
     begin
       if msg.hash.include? 'parent_id'
         mc_comment = MessageCollection::ALL_ROOMS.comment_for(msg.hash['parent_id'].to_i)
-        hg_comment = MessageCollection::ALL_ROOMS.howgood_for(msg.hash['parent_id'].to_i)
         comment = mc_comment
         if !comment.nil?
           comment = Comment.find_by(comment_id: comment.id) if comment.is_a? SE::API::Comment
@@ -78,73 +77,6 @@ cb.gen_hooks do
             cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
           end
           comment.save
-        elsif !hg_comment.nil?
-          regex = hg_comment[0]
-          types = hg_comment[1]
-         
-          params_passed = msg.body.downcase.split(' ')
-          num_to_display = 3
-          if params_passed.count >= 3
-            if !/\A\d+\z/.match(params_passed[2]) || params_passed[2].to_i < 1
-              cb.say "Bad number. Reply to howgood with <comment_type> <num> to print num matches of comment_type where comment types are tp, fp, and *", room_id
-              next
-            end
-            num_to_display = params_passed[2].to_i
-          end
-          
-          comments_to_display = []
-          
-          case params_passed[1]
-          when 'tp'
-            if types == '*'
-              comments_to_display = Comment.where("tps >= ?", 1).select { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }
-            else
-              comments_to_display = Comment.where(post_type: types).where("tps >= ?", 1).select { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }
-            end
-          when 'fp'
-            if types == '*'
-              comments_to_display = Comment.where("fps >= ?", 1).select { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }
-            else
-              comments_to_display = Comment.where(post_type: types).where("fps >= ?", 1).select { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }
-            end
-          when '*'
-            if types == '*'
-              comments_to_display = Comment.select { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }
-            else
-              comments_to_display = Comment.where(post_type: types).select { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }
-            end
-          # when 'none'
-          ## TODO: Would love to have this functionality, but for whatever reason this condition always matches nothing. Need to bug crestmaster about this.
-          ##        That being said I'll probably pull request first and then figure this out as an add on...
-          #
-          #   if types == '*'
-          #     comments_to_display = Comment.where("fps < ?", 1).where("tps < ?", 1).select { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }
-          #   else
-          #     comments_to_display = Comment.where(post_type: type).where("fps < ?", 1).where("tps < ?", 1).select { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }
-          #   end
-          else
-            cb.say "Invalid comment type. Reply to howgood with <comment_type> <num> to print num matches of comment_type where comment types are tp, fp, and *", room_id
-            next
-          end
-          
-          if comments_to_display.count == 0
-            cb.say "There are no " + params_passed[1] + "'s on that howgood.", room_id
-            next
-          end
-            
-          # puts "Got passed: " + params_passed.to_s
-          # puts "Howgood with Regex: " + regex.to_s
-          # puts "Howgood with Types: " + types.to_s
-          # puts "Found the list of comments to display:"
-          # puts
-          # puts Array(comments_to_display.as_json).take(num_to_display).to_s
-          
-          #Pull comment_id's from the first num_to_display comments we matched to pass to scan
-          Array(comments_to_display.as_json).take(num_to_display).each { 
-            |comment| 
-            c = cli.comments(comment["comment_id"].to_s)
-            scan_comments(c, cli: cli, settings: settings, cb: cb, should_post_matches: false)
-          }
         else
           puts "That was not a report"
           # cb.say "That was not a report", room_id
@@ -294,8 +226,7 @@ cb.gen_hooks do
           final_output = [ #Add 4 spaces for formatting and newlines
             header, '-'*68, tp_msg, fp_msg, total_msg
           ].join("\n    ")
-          msgs = MessageCollection::ALL_ROOMS
-          msgs.push_howgood [regex, type], (say "    #{final_output}")
+          say "    #{final_output}"
         else
           say "Type must be q/a/question/answer/*"
         end
@@ -371,7 +302,7 @@ comments = cli.comments[0..-1]
 @logger = Logger.new('msg.log')
 @perspective_log = Logger.new('perspective.log')
 
-def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('/dev/null'), should_post_matches: true)
+def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('/dev/null'))
   comments.flatten.each do |comment|
 
     puts "Grab metadata..."
@@ -454,7 +385,7 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
                                 (room.regex_match && report_text) ||
                                 toxicity >= 0.7 || # I should add a room property for this
                                 post_inactive # And this
-                              ) && should_post_matches &&
+                              ) &&
                               !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(comment.owner.id.to_i) &&
                               comment.owner.json['user_type'] != 'moderator'
         if should_post_message

@@ -1,31 +1,6 @@
 class MessageCollection
   def initialize
     @messages = {}
-    @howgoods = {}
-  end
-  
-  def mytest()
-    print "Message count is:" + @messages.keys.count.to_s
-  end
-  
-  #TODO: Add some way to see what the regex was run on
-  #       ie: q, a, *
-  def push_howgood(regex_and_type, msg_ids)
-    @howgoods[regex_and_type] ||= []
-    @howgoods[regex_and_type].push(msg_ids)
-    @howgoods[regex_and_type].flatten!
-    if @howgoods.length > 10
-      @howgoods.delete(@howgoods.keys.last)
-    end
-    @howgoods
-  end
-  
-  def howgood_for(msg_id)
-    m = @howgoods.select do |regex_and_type, msg_ids|
-      msg_ids.include? msg_id
-    end
-    return nil if m.empty?
-    m.first[0]
   end
 
   def push(comment, msg_ids)
