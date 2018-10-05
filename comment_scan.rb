@@ -444,7 +444,7 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
     end
     
     #toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
-    toxicity = comment["perspective_score"].to_i
+    toxicity = comment["perspective_score"].to_f
     
     puts "Building message..."
     msg += " | Toxicity #{toxicity}"
