@@ -444,7 +444,7 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
     end
     
     #toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
-    toxicity = comment["perspective_score"]
+    toxicity = comment["perspective_score"].to_i
     
     puts "Building message..."
     msg += " | Toxicity #{toxicity}"
@@ -488,7 +488,6 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
     
     ROOMS.each do |room_id|
       room = Room.find_by(room_id: room_id)
-      #puts Array(room.as_json).to_s
       if room.on
         should_post_message = (
                                 #(room.magic_comment && has_magic_comment?(comment, post)) ||
