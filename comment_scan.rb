@@ -266,6 +266,16 @@ cb.gen_hooks do
         end
       end
     end
+    command "!!/master" do |bot, *args|
+      if matches_bot(bot)
+        if `git symbolic-ref --short HEAD`.chomp == "master"
+          say "I'm already on master!"
+        else
+          `git checkout master`
+          Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+        end
+      end
+    end
     command "!!/restart" do |bot, *args|
       if matches_bot(bot)
         Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
