@@ -405,7 +405,7 @@ end
 def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
   comments.flatten.each do |comment|
     
-    user =  Array(User.where(id: comment["owner_id"]).as_json)[0]
+    user =  Array(User.where(id: comment["owner_id"]).as_json)
     user = user.any? ? user[0] : false #if user was deleted, set it to false for easy checking
     
     puts "Grab metadata..."
@@ -488,17 +488,19 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
     
     ROOMS.each do |room_id|
       room = Room.find_by(room_id: room_id)
+      #puts Array(room.as_json).to_s
       if room.on
         should_post_message = (
                                 #(room.magic_comment && has_magic_comment?(comment, post)) ||
                                 (room.regex_match && report_text) ||
                                 toxicity >= 0.7 || # I should add a room property for this
                                 post_inactive # And this
-                              ) && should_post_matches &&
-                              (!isPostDeleted(cli, comment["post_id"]) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(comment.owner.id.to_i)) &&
-                              (user && user['user_type'] != 'moderator')
+                              ) && should_post_matches && user &&
+                              !isPostDeleted(cli, comment["post_id"]) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
+                              (user['user_type'] != 'moderator')
+                              
         if should_post_message
-          msgs.push comment, cb.say(comment_link, room_id)
+          msgs.push comment, cb.say(comment_text_to_post, room_id)
           msgs.push comment, cb.say(msg, room_id)
           msgs.push comment, cb.say(report_text, room_id) if room.regex_match && report_text
         end
