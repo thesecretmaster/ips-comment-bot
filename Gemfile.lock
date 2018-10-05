@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/izwick-schachter/se-api
-  revision: d48061d4c18d8d4212a95f13d6417d7c6fddd0ee
+  revision: 59678146183f27a98cc551e489a3c463a1aafdfb
   branch: master
   specs:
     se-api (0.0.0.beta1)
@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://gitlab.com/izwick-schachter/ChatX
-  revision: f4f687c2525159bf102ce99d180a82bcf4d35f23
+  revision: 73be8629f570c226522deecbdea924383c5aa8b7
   branch: master
   specs:
     chatx (0.0.0.pre.pre3)
@@ -79,7 +79,7 @@ GEM
     net-http-digest_auth (1.4.1)
     net-http-persistent (3.0.0)
       connection_pool (~> 2.2)
-    nokogiri (1.8.4)
+    nokogiri (1.8.5)
       mini_portile2 (~> 2.3.0)
     ntlm-http (0.1.1)
     openssl (2.1.1)
