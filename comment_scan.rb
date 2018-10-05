@@ -326,7 +326,7 @@ cb.gen_hooks do
     end
     command "!!/pull" do |bot, *args|
       if matches_bot(bot)
-        if !`git symbolic-ref --short HEAD`.chomp == "master"
+        if `git symbolic-ref --short HEAD`.chomp != "master"
           say "Pulling is only permitted when running on the master branch. Currently on #{`git rev-parse --abbrev-ref HEAD`.chop}."
         else
           `git pull`
