@@ -195,7 +195,7 @@ cb.gen_hooks do
             fps = Comment.where(post_type: type).where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
             total = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
           end
-          
+
           tp_msg = [ #Generate tp line
             'tp'.center(6),
             tps.round(0).to_s.center(11),
@@ -258,8 +258,12 @@ cb.gen_hooks do
     end
     command "!!/pull" do |bot, *args|
       if matches_bot(bot)
-        `git pull`
-        Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+        if !`git symbolic-ref --short HEAD`.chomp == "master"
+          say "Pulling is only permitted when running on the master branch. Currently on #{`git rev-parse --abbrev-ref HEAD`.chop}."
+        else
+          `git pull`
+          Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+        end
       end
     end
     command "!!/restart" do |bot, *args|
@@ -331,7 +335,7 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
     creation_ts = ts_for post.json["creation_date"]
     edit_ts = ts_for post.json["last_edit_date"]
     type = post.type[0].upcase
-    
+
     post_inactive = Time.at(post.json["last_activity_date"].to_i).to_date < Date.today - 30
 
     closed = post.json["close_date"]
