@@ -262,7 +262,7 @@ cb.gen_hooks do
             fps = Comment.where(post_type: type).where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
             total = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
           end
-          
+
           tp_msg = [ #Generate tp line
             'tp'.center(6),
             tps.round(0).to_s.center(11),
@@ -326,8 +326,12 @@ cb.gen_hooks do
     end
     command "!!/pull" do |bot, *args|
       if matches_bot(bot)
-        `git pull`
-        Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+        if !`git symbolic-ref --short HEAD`.chomp == "master"
+          say "Pulling is only permitted when running on the master branch. Currently on #{`git rev-parse --abbrev-ref HEAD`.chop}."
+        else
+          `git pull`
+          Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+        end
       end
     end
     command "!!/restart" do |bot, *args|
@@ -418,10 +422,35 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
     date = Time.at(comment["creation_date"].to_i)
     seconds = (Time.new - date).to_i
     ts = seconds < 60 ? "#{seconds} seconds ago" : "#{seconds/60} minutes ago"
+<<<<<<< HEAD
     
     puts "Grab post data/build message to post..."
     
     msg = "##{comment["post_id"]} #{author_link}"
+=======
+
+    puts "Grab post data..."
+
+    post = cli.posts(comment.json["post_id"])[0]
+
+    author = user_for post.owner
+    editor = user_for post.last_editor
+    creation_ts = ts_for post.json["creation_date"]
+    edit_ts = ts_for post.json["last_edit_date"]
+    type = post.type[0].upcase
+
+    post_inactive = Time.at(post.json["last_activity_date"].to_i).to_date < Date.today - 30
+
+    closed = post.json["close_date"]
+
+    toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
+
+    #Grab internal to find TP/FP. Will return nil if this comment hasn't
+    # been registered (if this scan isn't done from manscan)
+    mc_comment = Comment.find_by(comment_id: comment.json["comment_id"])
+
+    puts "Compile message..."
+>>>>>>> master
 
     puts "Analyzing post..."
     
