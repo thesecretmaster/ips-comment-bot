@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://gitlab.com/izwick-schachter/ChatX
-  revision: e7f4fd32523a8c7916121c3fe991d464cac8058d
+  revision: 73be8629f570c226522deecbdea924383c5aa8b7
   branch: master
   specs:
     chatx (0.0.0.pre.pre3)
