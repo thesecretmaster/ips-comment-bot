@@ -406,13 +406,14 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
   comments.flatten.each do |comment|
     
     user =  Array(User.where(id: comment["owner_id"]).as_json)[0]
+    user = user.any? ? user[0] : false #if user was deleted, set it to false for easy checking
     
     puts "Grab metadata..."
     
-    author = user["display_name"]
-    author_link = "[#{author}](#{user["link"]})"
-    rep = "#{user["reputation"]} rep"
-    body = comment["body_markdown"]
+    
+    author = user ? user["display_name"] : "(removed)"
+    author_link = user ? "[#{author}](#{user["link"]})" : "(removed)"
+    rep = user ? "#{user["reputation"]} rep" : "(removed) rep"
     
     date = Time.at(comment["creation_date"].to_i)
     seconds = (Time.new - date).to_i
@@ -495,7 +496,7 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
                                 post_inactive # And this
                               ) && should_post_matches &&
                               (!isPostDeleted(cli, comment["post_id"]) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(comment.owner.id.to_i)) &&
-                              user['user_type'] != 'moderator'
+                              (user && user['user_type'] != 'moderator')
         if should_post_message
           msgs.push comment, cb.say(comment_link, room_id)
           msgs.push comment, cb.say(msg, room_id)
