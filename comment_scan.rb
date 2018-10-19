@@ -320,7 +320,14 @@ cb.gen_hooks do
     command "!!/del" do |bot, type, regex|
       if matches_bot(bot)
         if r = Regex.find_by(post_type: type[0], regex: regex)
+          reas_id = r["reason_id"]
           say "Destroyed #{r.regex} (post_type #{r.post_type})!" if r.destroy
+          
+          #If there are no other regexes for this reason, destroy the reason too
+          if Regex.where(reason_id: reas_id).empty?
+            reas = Reason.where(id: reas_id)[0]
+            say "Destroyed reason: \"#{reas["name"]}\"" if reas.destroy
+          end
         else
           say "Could not find regex to destroy"
         end
