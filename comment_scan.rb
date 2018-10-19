@@ -76,12 +76,26 @@ cb.gen_hooks do
             end
           when 'huh?'
             matched_regexes = report_raw(comment["post_type"], comment["body_markdown"])
-            if matched_regexes.empty?
-              cb.say "Comment didn't match any regexes", room_id
+            reason_text = ""
+            #Go through regexes we matched to build reason_text
+            matched_regexes.each { |regex_matched| reason_text += "Matched reason \"#{Reason.where(id: regex_matched["reason_id"])[0]["name"]}\" for regex: #{regex_matched["regex"]}\n" }
+            #If post isn't deleted, check if this was an inactive comment
+            if !isPostDeleted(cli, comment["post_id"])
+              post = Array(cli.posts(comment["post_id"].to_i))[0]
+              if Time.at(post.json["last_activity_date"].to_i).to_date < Time.at(comment["creation_date"].to_i).to_date - 30
+                reason_text += "Comment was made #{(Time.at(comment["creation_date"].to_i).to_date - Time.at(post.json["last_activity_date"].to_i).to_date).to_i} days after last activity on post\n"
+              end
+            end
+            #Check if we're high on toxicity
+            if comment["toxicity"].to_f >= 0.7
+              reason_text += "Comment has toxicity of #{comment["toxicity"]}\n"
+            end
+            
+            reason_text = reason_text.chomp #chompt to eat that last newline
+            if !reason_text.to_s.empty?
+              cb.say reason_text, room_id #chomp to eat that last newline
             else
-              regex_reason_text = ""
-              matched_regexes.each { |regex_matched| regex_reason_text += "Matched reason \"#{Reason.where(id: regex_matched["reason_id"])[0]["name"]}\" for regex: #{regex_matched["regex"]}\n" }
-              cb.say regex_reason_text.chomp, room_id #chomp to eat that last newline
+              cb.say "Comment didn't match any regexes"
             end
           when 'rescan'
             c = cli.comments(comment["comment_id"])
