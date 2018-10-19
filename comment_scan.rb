@@ -74,6 +74,18 @@ cb.gen_hooks do
             MessageCollection::ALL_ROOMS.message_ids_for(mc_comment)[3..-1].each do |msg_id|
               cb.delete(msg_id)
             end
+          when 'huh?'
+            matched_regexes = report_raw(comment["post_type"], comment["body_markdown"])
+            if matched_regexes.empty?
+              cb.say "Comment didn't match any regexes", room_id
+            else
+              regex_reason_text = ""
+              matched_regexes.each { |regex_matched| regex_reason_text += "Matched reason \"#{Reason.where(id: regex_matched["reason_id"])[0]["name"]}\" for regex: #{regex_matched["regex"]}\n" }
+              cb.say regex_reason_text.chomp, room_id #chomp to eat that last newline
+            end
+          when 'rescan'
+            c = cli.comments(comment["comment_id"])
+            scan_comments(c, cli:cli, settings:settings, cb:cb)
           else
             cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
           end
@@ -308,7 +320,14 @@ cb.gen_hooks do
     command "!!/del" do |bot, type, regex|
       if matches_bot(bot)
         if r = Regex.find_by(post_type: type[0], regex: regex)
+          reas_id = r["reason_id"]
           say "Destroyed #{r.regex} (post_type #{r.post_type})!" if r.destroy
+          
+          #If there are no other regexes for this reason, destroy the reason too
+          if Regex.where(reason_id: reas_id).empty?
+            reas = Reason.where(id: reas_id)[0]
+            say "Destroyed reason: \"#{reas["name"]}\"" if reas.destroy
+          end
         else
           say "Could not find regex to destroy"
         end
