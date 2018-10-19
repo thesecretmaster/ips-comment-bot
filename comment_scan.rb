@@ -83,6 +83,9 @@ cb.gen_hooks do
               matched_regexes.each { |regex_matched| regex_reason_text += "Matched reason \"#{Reason.where(id: regex_matched["reason_id"])[0]["name"]}\" for regex: #{regex_matched["regex"]}\n" }
               cb.say regex_reason_text.chomp, room_id #chomp to eat that last newline
             end
+          when 'rescan'
+            c = cli.comments(comment["comment_id"])
+            scan_comments(c, cli:cli, settings:settings, cb:cb)
           else
             cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
           end
