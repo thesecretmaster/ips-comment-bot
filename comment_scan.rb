@@ -95,11 +95,15 @@ cb.gen_hooks do
             if !reason_text.to_s.empty?
               cb.say reason_text, room_id #chomp to eat that last newline
             else
-              cb.say "Comment didn't match any regexes"
+              cb.say "Comment didn't match any regexes", room_id
             end
           when 'rescan'
             c = cli.comments(comment["comment_id"])
-            scan_comments(c, cli:cli, settings:settings, cb:cb)
+            if c.empty?
+              cb.say "Comment with id #{comment["comment_id"]} was deleted and cannot be rescanned.", room_id
+            else
+              scan_comments(c, cli:cli, settings:settings, cb:cb)
+            end
           else
             cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
           end
@@ -163,7 +167,7 @@ cb.gen_hooks do
           # puts "Howgood with Types: " + types.to_s
           # puts "Found the list of comments to display:"
           # puts
-          # puts Array(comments_to_display.as_json).take(num_to_display).to_s
+          # puts comments_to_display.take(num_to_display).to_s
 
           #Pull comment_id's from the first num_to_display comments we matched to pass to scan
           comments_to_display.take(num_to_display).each {
