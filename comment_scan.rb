@@ -166,7 +166,7 @@ cb.gen_hooks do
           # puts Array(comments_to_display.as_json).take(num_to_display).to_s
 
           #Pull comment_id's from the first num_to_display comments we matched to pass to scan
-          Array(comments_to_display.as_json).take(num_to_display).each {
+          comments_to_display.take(num_to_display).each {
             |comment|
             report_comments(comment, cli: cli, settings: settings, cb: cb, should_post_matches: false)
           }
