@@ -322,7 +322,7 @@ cb.gen_hooks do
         if r = Regex.find_by(post_type: type[0], regex: regex)
           reas_id = r["reason_id"]
           say "Destroyed #{r.regex} (post_type #{r.post_type})!" if r.destroy
-          
+
           #If there are no other regexes for this reason, destroy the reason too
           if Regex.where(reason_id: reas_id).empty?
             reas = Reason.where(id: reas_id)[0]
@@ -363,9 +363,14 @@ cb.gen_hooks do
         end
       end
     end
-    command "!!/restart" do |bot, *args|
+    command "!!/restart" do |bot, num_to_post, bundle, *args|
       if matches_bot(bot)
-        Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+        if bundle == "true"
+          say "Updating bundle..."
+          log = `bundle update`
+          say "Update complete!\n#{"="*32}\n#{log}"
+        end
+        Kernel.exec("bundle exec ruby comment_scan.rb #{num_to_post.nil? ? post_on_startup : num_to_post.to_i}")
       end
     end
     command("!!/kill") { |bot| `kill -9 $(cat bot.pid)` if matches_bot(bot) }
