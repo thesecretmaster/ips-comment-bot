@@ -1,12 +1,12 @@
 GIT
-  remote: https://github.com/izwick-schachter/se-api
+  remote: https://github.com/thesecretmaster/se-api
   revision: 59678146183f27a98cc551e489a3c463a1aafdfb
   branch: master
   specs:
     se-api (0.0.0.beta1)
 
 GIT
-  remote: https://github.com/izwick-schachter/se-realtime
+  remote: https://github.com/thesecretmaster/se-realtime
   revision: d8436a64fb154953b923711a4d66737cf6340b08
   branch: master
   specs:
@@ -18,7 +18,7 @@ GIT
       websocket-driver (~> 0.6)
 
 GIT
-  remote: https://gitlab.com/izwick-schachter/ChatX
+  remote: https://gitlab.com/thesecretmaster/ChatX
   revision: 8b2e50d62f5031297785cacf2f1b84dce8c87a60
   branch: master
   specs:

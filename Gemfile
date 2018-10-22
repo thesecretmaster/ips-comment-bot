@@ -1,9 +1,9 @@
 source "https://rubygems.org"
 
-gem "chatx", git: "https://gitlab.com/izwick-schachter/ChatX", branch: 
+gem "chatx", git: "https://gitlab.com/thesecretmaster/ChatX", branch:
 "master"
-gem "se-realtime", git: "https://github.com/izwick-schachter/se-realtime", branch: "master"
-gem "se-api", git: "https://github.com/izwick-schachter/se-api", branch: "master"
+gem "se-realtime", git: "https://github.com/thesecretmaster/se-realtime", branch: "master"
+gem "se-api", git: "https://github.com/thesecretmaster/se-api", branch: "master"
 gem "pry"
 gem "classifier-reborn", "2.1.0"
 gem "htmlentities"
