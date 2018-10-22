@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://gitlab.com/izwick-schachter/ChatX
-  revision: 73be8629f570c226522deecbdea924383c5aa8b7
+  revision: 8b2e50d62f5031297785cacf2f1b84dce8c87a60
   branch: master
   specs:
     chatx (0.0.0.pre.pre3)
@@ -58,7 +58,7 @@ GEM
       domain_name (~> 0.5)
     httparty (0.16.2)
       multi_xml (>= 0.5.2)
-    i18n (1.1.0)
+    i18n (1.1.1)
       concurrent-ruby (~> 1.0)
     mechanize (2.7.6)
       domain_name (~> 0.5, >= 0.5.1)
@@ -82,7 +82,7 @@ GEM
     nokogiri (1.8.5)
       mini_portile2 (~> 2.3.0)
     ntlm-http (0.1.1)
-    openssl (2.1.1)
+    openssl (2.1.2)
     permessage_deflate (0.1.4)
     pry (0.11.3)
       coderay (~> 1.1.0)
