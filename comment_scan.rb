@@ -37,7 +37,7 @@ end
 def restart(num_to_post, bundle)
   if bundle == "true"
     say "Updating bundle..."
-    log = `bundle`
+    log = `bundle install`
     say "Update complete!\n#{"="*32}\n#{log}"
   end
   Kernel.exec("bundle exec ruby comment_scan.rb #{num_to_post.nil? ? post_on_startup : num_to_post.to_i}")
