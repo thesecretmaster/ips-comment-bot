@@ -472,7 +472,7 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
 
     puts "Grab post data/build message to post..."
 
-    msg = "##{comment["post_id"]} #{author_link}"
+    msg = "##{comment["post_id"]} #{author_link} (#{rep})"
 
     puts "Analyzing post..."
 
