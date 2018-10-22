@@ -34,6 +34,15 @@ def matches_bot(bot)
   bot.nil? || bot == '*' || BOT_NAMES.include?(bot.downcase)
 end
 
+def restart(num_to_post, bundle)
+  if bundle == "true"
+    say "Updating bundle..."
+    log = `bundle`
+    say "Update complete!\n#{"="*32}\n#{log}"
+  end
+  Kernel.exec("bundle exec ruby comment_scan.rb #{num_to_post.nil? ? post_on_startup : num_to_post.to_i}")
+end
+
 ROOMS.each do |room_id|
   Room.find_or_create_by(room_id: room_id)
 end
@@ -343,13 +352,13 @@ cb.gen_hooks do
         end
       end
     end
-    command "!!/pull" do |bot, *args|
+    command "!!/pull" do |bot, num_to_post, bundle, *args|
       if matches_bot(bot)
         if `git symbolic-ref --short HEAD`.chomp != "master"
           say "Pulling is only permitted when running on the master branch. Currently on #{`git rev-parse --abbrev-ref HEAD`.chop}."
         else
           `git pull`
-          Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+          restart num_to_post, bundle
         end
       end
     end
@@ -365,12 +374,7 @@ cb.gen_hooks do
     end
     command "!!/restart" do |bot, num_to_post, bundle, *args|
       if matches_bot(bot)
-        if bundle == "true"
-          say "Updating bundle..."
-          log = `bundle update`
-          say "Update complete!\n#{"="*32}\n#{log}"
-        end
-        Kernel.exec("bundle exec ruby comment_scan.rb #{num_to_post.nil? ? post_on_startup : num_to_post.to_i}")
+        restart num_to_post, bundle
       end
     end
     command("!!/kill") { |bot| `kill -9 $(cat bot.pid)` if matches_bot(bot) }
