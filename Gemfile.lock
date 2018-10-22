@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://gitlab.com/thesecretmaster/ChatX
-  revision: 8b2e50d62f5031297785cacf2f1b84dce8c87a60
+  revision: fe7bc8f1258d43e61f561f532ee57ba1c557b306
   branch: master
   specs:
     chatx (0.0.0.pre.pre3)
