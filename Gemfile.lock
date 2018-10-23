@@ -1,12 +1,12 @@
 GIT
-  remote: https://github.com/izwick-schachter/se-api
+  remote: https://github.com/thesecretmaster/se-api
   revision: 59678146183f27a98cc551e489a3c463a1aafdfb
   branch: master
   specs:
     se-api (0.0.0.beta1)
 
 GIT
-  remote: https://github.com/izwick-schachter/se-realtime
+  remote: https://github.com/thesecretmaster/se-realtime
   revision: d8436a64fb154953b923711a4d66737cf6340b08
   branch: master
   specs:
@@ -18,8 +18,8 @@ GIT
       websocket-driver (~> 0.6)
 
 GIT
-  remote: https://gitlab.com/izwick-schachter/ChatX
-  revision: 73be8629f570c226522deecbdea924383c5aa8b7
+  remote: https://gitlab.com/thesecretmaster/ChatX
+  revision: fe7bc8f1258d43e61f561f532ee57ba1c557b306
   branch: master
   specs:
     chatx (0.0.0.pre.pre3)
@@ -58,7 +58,7 @@ GEM
       domain_name (~> 0.5)
     httparty (0.16.2)
       multi_xml (>= 0.5.2)
-    i18n (1.1.0)
+    i18n (1.1.1)
       concurrent-ruby (~> 1.0)
     mechanize (2.7.6)
       domain_name (~> 0.5, >= 0.5.1)
@@ -82,7 +82,7 @@ GEM
     nokogiri (1.8.5)
       mini_portile2 (~> 2.3.0)
     ntlm-http (0.1.1)
-    openssl (2.1.1)
+    openssl (2.1.2)
     permessage_deflate (0.1.4)
     pry (0.11.3)
       coderay (~> 1.1.0)
