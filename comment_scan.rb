@@ -86,7 +86,12 @@ cb.gen_hooks do
           when 'huh?'
             matched_regexes = report_raw(comment["post_type"], comment["body_markdown"])
             # Go through regexes we matched to build reason_text
-            reason_text = matched_regexes.map { |rm| "Matched reason \"#{Reason.where(id: rm["reason_id"]).first.name}\" for regex: #{rm.regex}" }.join("\n")
+            reason_text = matched_regexes.map do |regex_match|
+              reason = "Matched reason \"#{Reason.where(id: regex_match["reason_id"]).first.name}\""
+              regex = "for regex #{regex_match.regex}"
+              "#{reason} #{regex}"
+            end.join("\n")
+            
             # If post isn't deleted, check if this was an inactive comment
             if !post_deleted?(cli, comment["post_id"])
               post = cli.posts(comment["post_id"].to_i).first
