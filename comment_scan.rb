@@ -99,16 +99,10 @@ cb.gen_hooks do
               end
             end
             # Check if we're high on toxicity
-            if comment["toxicity"].to_f >= 0.7
-              reason_text += "Comment has toxicity of #{comment["toxicity"]}\n"
-            end
+            reason_text += "Comment has toxicity of #{comment["toxicity"]}\n" if comment["toxicity"].to_f >= 0.7
             
             reason_text = reason_text.chomp # chomp to eat that last newline
-            if !reason_text.to_s.empty?
-              cb.say reason_text, room_id
-            else
-              cb.say "Comment didn't match any regexes", room_id
-            end
+            cb.say (reason_text.empty? ? "Comment didn't match any regexes" : reason_text), room_id
           when 'rescan'
             c = cli.comments(comment["comment_id"])
             if c.empty?
