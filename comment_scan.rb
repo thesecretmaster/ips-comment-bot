@@ -85,9 +85,8 @@ cb.gen_hooks do
             end
           when 'huh?'
             matched_regexes = report_raw(comment["post_type"], comment["body_markdown"])
-            reason_text = ""
             # Go through regexes we matched to build reason_text
-            matched_regexes.each { |regex_matched| reason_text += "Matched reason \"#{Reason.where(id: regex_matched["reason_id"])[0]["name"]}\" for regex: #{regex_matched["regex"]}\n" }
+            reason_text = matched_regexes.map { |rm| "Matched reason \"#{Reason.where(id: rm["reason_id"]).first.name}\" for regex: #{rm.regex}" }.join("\n")
             # If post isn't deleted, check if this was an inactive comment
             if !post_deleted?(cli, comment["post_id"])
               post = cli.posts(comment["post_id"].to_i).first
@@ -189,7 +188,7 @@ cb.gen_hooks do
         end
       end
     rescue Exception => e
-      cb.say "Got excpetion ```#{e}``` trying to accept your feedback", room_id
+      cb.say "Got excpetion ```#{e}``` processing your response", room_id
     end
   end
   ROOMS.each do |room_id|
