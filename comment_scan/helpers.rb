@@ -133,3 +133,7 @@ end
 def isCommentDeleted(cli, comment_id)
   Array(cli.comments(comment_id.to_s)).empty?
 end
+
+def timestamp_to_date(timestamp)
+  Time.at(timestamp.to_i).to_date
+end

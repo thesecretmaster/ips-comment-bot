@@ -90,9 +90,9 @@ cb.gen_hooks do
             matched_regexes.each { |regex_matched| reason_text += "Matched reason \"#{Reason.where(id: regex_matched["reason_id"])[0]["name"]}\" for regex: #{regex_matched["regex"]}\n" }
             # If post isn't deleted, check if this was an inactive comment
             if !post_deleted?(cli, comment["post_id"])
-              post = Array(cli.posts(comment["post_id"].to_i))[0]
-              if Time.at(post.json["last_activity_date"].to_i).to_date < Time.at(comment["creation_date"].to_i).to_date - 30
-                reason_text += "Comment was made #{(Time.at(comment["creation_date"].to_i).to_date - Time.at(post.json["last_activity_date"].to_i).to_date).to_i} days after last activity on post\n"
+              post = cli.posts(comment["post_id"].to_i).first
+              if timestamp_to_date(post.json["last_activity_date"]) < timestamp_to_date(comment["creation_date"]) - 30
+                reason_text += "Comment was made #{(timestamp_to_date(comment["creation_date"]) - timestamp_to_date(post.json["last_activity_date"])).to_i} days after last activity on post\n"
               end
             end
             # Check if we're high on toxicity
@@ -497,7 +497,7 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
       type = post.type[0].upcase
       closed = post.json["close_date"]
 
-      post_inactive = Time.at(post.json["last_activity_date"].to_i).to_date < Time.at(comment["creation_date"].to_i).to_date - 30
+      post_inactive = timestamp_to_date(post.json["last_activity_date"]) < timestamp_to_date(comment["creation_date"]) - 30
 
       msg += " | [#{type}: #{post.title}](#{post.link}) #{'[c]' if closed} (score: #{post.score}) | posted #{creation_ts} by #{author}"
       msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
