@@ -126,7 +126,7 @@ def percent_str(numerator, denominator)
   "#{(numerator*100.0/denominator).round(8)}%"
 end
 
-def isPostDeleted(cli, post_id)
+def post_deleted?(cli, post_id)
   Array(cli.posts(post_id.to_i)).empty?
 end
 
