@@ -87,7 +87,7 @@ cb.gen_hooks do
             matched_regexes = report_raw(comment["post_type"], comment["body_markdown"])
             # Go through regexes we matched to build reason_text
             reason_text = matched_regexes.map do |regex_match|
-              reason = "Matched reason \"#{Reason.where(id: regex_match["reason_id"]).first.name}\""
+              reason = "Matched reason \"#{regex_match.reason.name}\""
               regex = "for regex #{regex_match.regex}"
               "#{reason} #{regex}"
             end.join("\n")
