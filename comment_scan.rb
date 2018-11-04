@@ -93,8 +93,7 @@ cb.gen_hooks do
             end.join("\n")
             
             # If post isn't deleted, check if this was an inactive comment
-            if !post_deleted?(cli, comment["post_id"])
-              post = cli.posts(comment["post_id"].to_i).first
+            if post = post_exists?(cli, comment.post_id)
               if timestamp_to_date(post.json["last_activity_date"]) < timestamp_to_date(comment["creation_date"]) - 30
                 reason_text += "Comment was made #{(timestamp_to_date(comment["creation_date"]) - timestamp_to_date(post.json["last_activity_date"])).to_i} days after last activity on post\n"
               end
@@ -492,8 +491,7 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
     post_inactive = false # Default to false in case we can't access post
     post = [] # so that we can use this later for whitelisted users
 
-    if !post_deleted?(cli, comment["post_id"]) # If post wasn't deleted, do full print
-      post = Array(cli.posts(comment["post_id"].to_i))[0]
+    if post = post_exists?(cli, comment.post_id) # If post wasn't deleted, do full print
       author = user_for post.owner
       editor = user_for post.last_editor
       creation_ts = ts_for post.json["creation_date"]
@@ -512,7 +510,7 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
 
     puts "Building message..."
     msg += " | Toxicity #{toxicity}"
-    # msg += " | Has magic comment" if !post_deleted?(cli, comment["post_id"]) and has_magic_comment? comment, post
+    # msg += " | Has magic comment" if !post_exists?(cli, comment["post_id"]) and has_magic_comment? comment, post
     msg += " | High toxicity" if toxicity >= 0.7
     msg += " | Comment on inactive post" if post_inactive
     msg += " | tps/fps: #{comment["tps"].to_i}/#{comment["fps"].to_i}"
@@ -544,7 +542,7 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
       msgs.push comment, cb.say(report_text, HQ_ROOM_ID) if report_text
     # To be totally honest, maintaining this is not worth it to me right now, so I'm gonna stop working on this setting
     # elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).flatten.include?(comment.owner.id.to_i)
-    elsif !settings['all_comments'] && (report_text) && (!post_deleted?(cli, comment["post_id"]) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).flatten.include?(user["user_id"].to_i))
+    elsif !settings['all_comments'] && (report_text) && (post && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).flatten.include?(user["user_id"].to_i))
       msgs.push comment, cb.say(comment_text_to_post, HQ_ROOM_ID)
       msgs.push comment, cb.say(msg, HQ_ROOM_ID)
       msgs.push comment, cb.say(report_text, HQ_ROOM_ID) if report_text
@@ -559,7 +557,7 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
                                 toxicity >= 0.7 || # I should add a room property for this
                                 post_inactive # And this
                               ) && should_post_matches && user &&
-                              !post_deleted?(cli, comment["post_id"]) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
+                              post && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
                               (user['user_type'] != 'moderator')
 
         if should_post_message
