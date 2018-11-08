@@ -19,7 +19,7 @@ settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : E
 
 post_on_startup = ARGV[0].to_i || 0
 
-cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
+cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'], log_location: STDOUT)
 cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
 HQ_ROOM_ID = settings['hq_room_id'].to_i
 ROOMS = settings['rooms']
