@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://gitlab.com/thesecretmaster/ChatX
-  revision: fe7bc8f1258d43e61f561f532ee57ba1c557b306
+  revision: e39751a3f65a0be8f87896c21369224923777ca0
   branch: master
   specs:
     chatx (0.0.0.pre.pre3)
@@ -48,7 +48,7 @@ GEM
     classifier-reborn (2.1.0)
       fast-stemmer (~> 1.0)
     coderay (1.1.2)
-    concurrent-ruby (1.0.5)
+    concurrent-ruby (1.1.3)
     connection_pool (2.2.2)
     domain_name (0.5.20180417)
       unf (>= 0.0.5, < 1.0.0)
@@ -69,7 +69,7 @@ GEM
       nokogiri (~> 1.6)
       ntlm-http (~> 0.1, >= 0.1.1)
       webrobots (>= 0.0.9, < 0.2)
-    method_source (0.9.0)
+    method_source (0.9.1)
     mime-types (3.2.2)
       mime-types-data (~> 3.2015)
     mime-types-data (3.2018.0812)
@@ -84,7 +84,7 @@ GEM
     ntlm-http (0.1.1)
     openssl (2.1.2)
     permessage_deflate (0.1.4)
-    pry (0.11.3)
+    pry (0.12.0)
       coderay (~> 1.1.0)
       method_source (~> 0.9.0)
     pry-byebug (3.6.0)
