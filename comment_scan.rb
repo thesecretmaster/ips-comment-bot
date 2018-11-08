@@ -18,7 +18,7 @@ sleeptime = 0
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
 log_formatter = proc do |severity, datetime, progname, msg|
-  "1 #{progname}: #{msg}"
+  "1 #{progname}: #{msg}\n"
 end
 
 post_on_startup = ARGV[0].to_i || 0
