@@ -27,7 +27,7 @@ IGNORE_USER_IDS = Array(settings['ignore_user_ids'] || WhitelistedUser.all.map(&
 cb.login(cookie_file: 'cookies.yml')
 cb.say("_Starting at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop} (#{`git log -1 --pretty=%B`.gsub("\n", '')})_", HQ_ROOM_ID)
 cb.join_room HQ_ROOM_ID
-cb.join_rooms ROOMS #THIS IS THE PROBLEM
+cb.join_rooms ROOMS # THIS IS THE PROBLEM
 BOT_NAMES = settings['names'] || Array(settings['name'])
 def matches_bot(bot)
   puts "Checking if #{bot} matches #{BOT_NAMES}"
@@ -85,16 +85,31 @@ cb.gen_hooks do
             end
           when 'huh?'
             matched_regexes = report_raw(comment["post_type"], comment["body_markdown"])
-            if matched_regexes.empty?
-              cb.say "Comment didn't match any regexes", room_id
-            else
-              regex_reason_text = ""
-              matched_regexes.each { |regex_matched| regex_reason_text += "Matched reason \"#{Reason.where(id: regex_matched["reason_id"])[0]["name"]}\" for regex: #{regex_matched["regex"]}\n" }
-              cb.say regex_reason_text.chomp, room_id #chomp to eat that last newline
+            # Go through regexes we matched to build reason_text
+            reason_text = matched_regexes.map do |regex_match|
+              reason = "Matched reason \"#{regex_match.reason.name}\""
+              regex = "for regex #{regex_match.regex}"
+              "#{reason} #{regex}"
+            end.join("\n")
+            
+            # If post isn't deleted, check if this was an inactive comment
+            if post = post_exists?(cli, comment.post_id)
+              if timestamp_to_date(post.json["last_activity_date"]) < timestamp_to_date(comment["creation_date"]) - 30
+                reason_text += "Comment was made #{(timestamp_to_date(comment["creation_date"]) - timestamp_to_date(post.json["last_activity_date"])).to_i} days after last activity on post\n"
+              end
             end
+            # Check if we're high on toxicity
+            reason_text += "Comment has toxicity of #{comment["toxicity"]}\n" if comment["toxicity"].to_f >= 0.7
+            
+            reason_text = reason_text.chomp # chomp to eat that last newline
+            cb.say (reason_text.empty? ? "Comment didn't match any regexes" : reason_text), room_id
           when 'rescan'
             c = cli.comments(comment["comment_id"])
-            scan_comments(c, cli:cli, settings:settings, cb:cb)
+            if c.empty?
+              cb.say "Comment with id #{comment["comment_id"]} was deleted and cannot be rescanned.", room_id
+            else
+              scan_comments(c, cli:cli, settings:settings, cb:cb)
+            end
           else
             cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
           end
@@ -158,10 +173,10 @@ cb.gen_hooks do
           # puts "Howgood with Types: " + types.to_s
           # puts "Found the list of comments to display:"
           # puts
-          # puts Array(comments_to_display.as_json).take(num_to_display).to_s
+          # puts comments_to_display.take(num_to_display).to_s
 
-          #Pull comment_id's from the first num_to_display comments we matched to pass to scan
-          Array(comments_to_display.as_json).take(num_to_display).each {
+          # Pull comment_id's from the first num_to_display comments we matched to pass to scan
+          comments_to_display.take(num_to_display).each {
             |comment|
             report_comments(comment, cli: cli, settings: settings, cb: cb, should_post_matches: false)
           }
@@ -171,7 +186,7 @@ cb.gen_hooks do
         end
       end
     rescue Exception => e
-      cb.say "Got excpetion ```#{e}``` trying to accept your feedback", room_id
+      cb.say "Got excpetion ```#{e}``` processing your response", room_id
     end
   end
   ROOMS.each do |room_id|
@@ -284,7 +299,7 @@ cb.gen_hooks do
             total = Comment.where(post_type: type).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
           end
 
-          tp_msg = [ #Generate tp line
+          tp_msg = [ # Generate tp line
             'tp'.center(6),
             tps.round(0).to_s.center(11),
             percent_str(tps, total).center(14),
@@ -292,7 +307,7 @@ cb.gen_hooks do
             percent_str(tps, Comment.count).center(18),
           ].join('|')
 
-          fp_msg = [ #Generate fp line
+          fp_msg = [ # Generate fp line
             'fp'.center(6),
             fps.round(0).to_s.center(11),
             percent_str(fps, total).center(14),
@@ -300,7 +315,7 @@ cb.gen_hooks do
             percent_str(fps, Comment.count).center(18),
           ].join('|')
 
-          total_msg = [ #Generate total line
+          total_msg = [ # Generate total line
             'Total'.center(6),
             total.round(0).to_s.center(11),
             '-'.center(14),
@@ -308,10 +323,10 @@ cb.gen_hooks do
             percent_str(total, Comment.count).center(18),
           ].join('|')
 
-          #Generate header line
+          # Generate header line
           header = " Type | # Matched | % of Matched | % of All Type | % of ALL Comments"
 
-          final_output = [ #Add 4 spaces for formatting and newlines
+          final_output = [ # Add 4 spaces for formatting and newlines
             header, '-'*68, tp_msg, fp_msg, total_msg
           ].join("\n    ")
           msgs = MessageCollection::ALL_ROOMS
@@ -332,7 +347,7 @@ cb.gen_hooks do
           reas_id = r["reason_id"]
           say "Destroyed #{r.regex} (post_type #{r.post_type})!" if r.destroy
 
-          #If there are no other regexes for this reason, destroy the reason too
+          # If there are no other regexes for this reason, destroy the reason too
           if Regex.where(reason_id: reas_id).empty?
             reas = Reason.where(id: reas_id)[0]
             say "Destroyed reason: \"#{reas["name"]}\"" if reas.destroy
@@ -437,9 +452,9 @@ def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('
     # @logger.info "(SE::API::Comment) #{comment.inspect}"
     # @logger.info "Current time: #{Time.new.to_i}"
 
-    #rval = cb.say(comment.link, 63296)
-    #cb.delete(rval.to_i)
-    #cb.say(msg, 63296)
+    # rval = cb.say(comment.link, 63296)
+    # cb.delete(rval.to_i)
+    # cb.say(msg, 63296)
 
   end
 end
@@ -448,7 +463,7 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
   comments.flatten.each do |comment|
 
     user =  Array(User.where(id: comment["owner_id"]).as_json)
-    user = user.any? ? user[0] : false #if user was deleted, set it to false for easy checking
+    user = user.any? ? user[0] : false # if user was deleted, set it to false for easy checking
 
     puts "Grab metadata..."
 
@@ -463,15 +478,14 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
 
     puts "Grab post data/build message to post..."
 
-    msg = "##{comment["post_id"]} #{author_link}"
+    msg = "##{comment["post_id"]} #{author_link} (#{rep})"
 
     puts "Analyzing post..."
 
-    post_inactive = false #Default to false in case we can't access post
-    post = [] #so that we can use this later for whitelisted users
+    post_inactive = false # Default to false in case we can't access post
+    post = [] # so that we can use this later for whitelisted users
 
-    if !isPostDeleted(cli, comment["post_id"]) #If post wasn't deleted, do full print
-      post = Array(cli.posts(comment["post_id"].to_i))[0]
+    if post = post_exists?(cli, comment.post_id) # If post wasn't deleted, do full print
       author = user_for post.owner
       editor = user_for post.last_editor
       creation_ts = ts_for post.json["creation_date"]
@@ -479,28 +493,28 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
       type = post.type[0].upcase
       closed = post.json["close_date"]
 
-      post_inactive = Time.at(post.json["last_activity_date"].to_i).to_date < Time.at(comment["creation_date"].to_i).to_date - 30
+      post_inactive = timestamp_to_date(post.json["last_activity_date"]) < timestamp_to_date(comment["creation_date"]) - 30
 
       msg += " | [#{type}: #{post.title}](#{post.link}) #{'[c]' if closed} (score: #{post.score}) | posted #{creation_ts} by #{author}"
       msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
     end
 
-    #toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
+    # toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
     toxicity = comment["perspective_score"].to_f
 
     puts "Building message..."
     msg += " | Toxicity #{toxicity}"
-    #msg += " | Has magic comment" if !isPostDeleted(cli, comment["post_id"]) and has_magic_comment? comment, post
+    # msg += " | Has magic comment" if !post_exists?(cli, comment["post_id"]) and has_magic_comment? comment, post
     msg += " | High toxicity" if toxicity >= 0.7
     msg += " | Comment on inactive post" if post_inactive
     msg += " | tps/fps: #{comment["tps"].to_i}/#{comment["fps"].to_i}"
 
     puts "Building comment body..."
 
-    #If the comment exists, we can just post the link and ChatX will do the rest
-    #Else, make a quote manually with just the body (no need to be fancy, this must be old)
-    #(include a newline in the manual string to lift 500 character limit in chat)
-    #TODO: Chat API is truncating to 500 characters right now even though we're good to post more. Fix this.
+    # If the comment exists, we can just post the link and ChatX will do the rest
+    # Else, make a quote manually with just the body (no need to be fancy, this must be old)
+    # (include a newline in the manual string to lift 500 character limit in chat)
+    # TODO: Chat API is truncating to 500 characters right now even though we're good to post more. Fix this.
     comment_text_to_post = isCommentDeleted(cli, comment["comment_id"]) ? ("\n> " + comment["body"]) : comment["link"]
 
     puts "Check reasons..."
@@ -520,9 +534,9 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
       msgs.push comment, cb.say(comment_text_to_post, HQ_ROOM_ID)
       msgs.push comment, cb.say(msg, HQ_ROOM_ID)
       msgs.push comment, cb.say(report_text, HQ_ROOM_ID) if report_text
-      # To be totally honest, maintaining this is not worth it to me right now, so I'm gonna stop working on this setting
-    #elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).flatten.include?(comment.owner.id.to_i)
-    elsif !settings['all_comments'] && (report_text) && (!isPostDeleted(cli, comment["post_id"]) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).flatten.include?(user["user_id"].to_i))
+    # To be totally honest, maintaining this is not worth it to me right now, so I'm gonna stop working on this setting
+    # elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).flatten.include?(comment.owner.id.to_i)
+    elsif !settings['all_comments'] && (report_text) && (post && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).flatten.include?(user["user_id"].to_i))
       msgs.push comment, cb.say(comment_text_to_post, HQ_ROOM_ID)
       msgs.push comment, cb.say(msg, HQ_ROOM_ID)
       msgs.push comment, cb.say(report_text, HQ_ROOM_ID) if report_text
@@ -532,12 +546,12 @@ def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
       room = Room.find_by(room_id: room_id)
       if room.on
         should_post_message = (
-                                #(room.magic_comment && has_magic_comment?(comment, post)) ||
+                                # (room.magic_comment && has_magic_comment?(comment, post)) ||
                                 (room.regex_match && report_text) ||
                                 toxicity >= 0.7 || # I should add a room property for this
                                 post_inactive # And this
                               ) && should_post_matches && user &&
-                              !isPostDeleted(cli, comment["post_id"]) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
+                              post && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
                               (user['user_type'] != 'moderator')
 
         if should_post_message

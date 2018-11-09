@@ -18,3 +18,4 @@ Note: If <botname> is the only argument, it can be ommitted and the command will
 !!/ttscan <botname> - Prints the time until the next poll of the API
 !!/regexes <botname> - Lists all the regexes in the bot
 !!/manscan <botname> <comment_id's> - Re-report comments with <comment_id's>. <comment_id's> should be a space seperated list of ID's
+!!/howgood <botname> <post_type> <regex> - Produce a table of all comments on <post_type> posts that match <regex> where <post_type> is one of: q, a, *

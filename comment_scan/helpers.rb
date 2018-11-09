@@ -126,10 +126,19 @@ def percent_str(numerator, denominator)
   "#{(numerator*100.0/denominator).round(8)}%"
 end
 
-def isPostDeleted(cli, post_id)
-  Array(cli.posts(post_id.to_i)).empty?
+def post_exists?(cli, post_id)
+  the_post = cli.posts(post_id.to_i)
+  if Array(the_post).empty?
+    nil
+  else
+    the_post.first
+  end
 end
 
 def isCommentDeleted(cli, comment_id)
   Array(cli.comments(comment_id.to_s)).empty?
+end
+
+def timestamp_to_date(timestamp)
+  Time.at(timestamp.to_i).to_date
 end
