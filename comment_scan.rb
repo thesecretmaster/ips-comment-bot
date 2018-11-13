@@ -15,11 +15,20 @@ IO.write("bot.pid", Process.pid.to_s)
 start = Time.now
 sleeptime = 0
 
+if ENV['SHORT_LOGS']
+  $stdout.sync = true
+  log_formatter = proc do |severity, datetime, progname, msg|
+    "#{msg}\n"
+  end
+else
+  log_formatter = nil
+end
+
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
 post_on_startup = ARGV[0].to_i || 0
 
-cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'])
+cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'], log_location: STDOUT, log_formatter: log_formatter)
 cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
 HQ_ROOM_ID = settings['hq_room_id'].to_i
 ROOMS = settings['rooms']
