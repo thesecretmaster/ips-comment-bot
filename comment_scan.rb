@@ -100,7 +100,7 @@ cb.gen_hooks do
               regex = "for regex #{regex_match.regex}"
               "#{reason} #{regex}"
             end.join("\n")
-            
+
             # If post isn't deleted, check if this was an inactive comment
             if post = post_exists?(cli, comment.post_id)
               if timestamp_to_date(post.json["last_activity_date"]) < timestamp_to_date(comment["creation_date"]) - 30
@@ -109,7 +109,7 @@ cb.gen_hooks do
             end
             # Check if we're high on toxicity
             reason_text += "Comment has toxicity of #{comment["toxicity"]}\n" if comment["toxicity"].to_f >= 0.7
-            
+
             reason_text = reason_text.chomp # chomp to eat that last newline
             cb.say (reason_text.empty? ? "Comment didn't match any regexes" : reason_text), room_id
           when 'rescan'
@@ -346,8 +346,17 @@ cb.gen_hooks do
       end
     end
     command "!!/add" do |bot, type, regex, *reason|
-      if matches_bot(bot) && r = Reason.find_or_create_by(name: reason.join(' ')).regexes.create(post_type: type[0], regex: regex)
-        say "Added regex #{r.regex} for post_type #{r.post_type} with reason '#{r.reason.name}'"
+      if matches_bot(bot) && reason = Reason.find_or_create_by(name: reason.join(' '))
+        begin
+          %r{#{regex}}
+        rescue RegexpError => e
+          say "Invalid regex: #{regex}"
+          say "    #{e}"
+        else
+          if r = reason.regexes.create(post_type: type[0], regex: regex)
+            say "Added regex #{r.regex} for post_type #{r.post_type} with reason '#{r.reason.name}'"
+          end
+        end
       end
     end
     command "!!/del" do |bot, type, regex|
