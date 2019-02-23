@@ -69,19 +69,19 @@ cb.gen_hooks do
           when 'tp'
             comment.tps ||= 0
             comment.tps += 1
-            cb.say "Marked this comment as caught correctly (tp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps", room_id
+            cb.say "Marked this comment as caught correctly (tp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself.", room_id
           when 'fp'
             comment.fps ||= 0
             comment.fps += 1
-            cb.say "Marked this comment as caught incorrectly (fp) Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps", room_id
+            cb.say "Marked this comment as caught incorrectly (fp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps", room_id
           when 'wrongo'
             comment.fps ||= 0
             comment.fps += 1
-            cb.say "Registered as WRONGO", room_id
+            cb.say "Registered as WRONGO! Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps", room_id
           when 'rude'
             comment.rude ||= 0
             comment.rude += 1
-            cb.say "Registered as rude", room_id
+            cb.say "Registered as rude. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself.", room_id
           when 'i'
             # Do nothing. This is for making comments about the comment
           when 'dbid'
