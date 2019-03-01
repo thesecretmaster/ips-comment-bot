@@ -26,7 +26,7 @@ end
 
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 
-post_on_startup = ARGV[0].to_i || 0
+@post_on_startup = ARGV[0].to_i || 0
 
 cb = ChatBot.new(settings['ChatXUsername'], settings['ChatXPassword'], log_location: STDOUT, log_formatter: log_formatter)
 cli = SE::API::Client.new(settings['APIKey'], site: settings['site'])
@@ -49,7 +49,7 @@ def restart(num_to_post, bundle)
     log = `bundle install`
     say "Update complete!\n#{"="*32}\n#{log}"
   end
-  Kernel.exec("bundle exec ruby comment_scan.rb #{num_to_post.nil? ? post_on_startup : num_to_post.to_i}")
+  Kernel.exec("bundle exec ruby comment_scan.rb #{num_to_post.nil? ? @post_on_startup : num_to_post.to_i}")
 end
 
 ROOMS.each do |room_id|
@@ -401,7 +401,7 @@ cb.gen_hooks do
           say "I'm already on master!"
         else
           `git checkout master`
-          Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? post_on_startup : args[0].to_i}")
+          Kernel.exec("bundle exec ruby comment_scan.rb #{args.empty? ? @post_on_startup : args[0].to_i}")
         end
       end
     end
@@ -440,7 +440,7 @@ end
 
 comments = cli.comments[0..-1]
 
-@last_creation_date = comments[post_on_startup].json["creation_date"].to_i+1 unless comments[post_on_startup].nil?
+@last_creation_date = comments[@post_on_startup].json["creation_date"].to_i+1 unless comments[@post_on_startup].nil?
 
 @logger = Logger.new('msg.log')
 @perspective_log = Logger.new('perspective.log')
