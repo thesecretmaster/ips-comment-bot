@@ -107,10 +107,9 @@ cb.gen_hooks do
                 reason_text += "Comment was made #{(timestamp_to_date(comment["creation_date"]) - timestamp_to_date(post.json["last_activity_date"])).to_i} days after last activity on post\n"
               end
             end
-            # Check if we're high on toxicity
-            reason_text += "Comment has toxicity of #{comment["toxicity"]}\n" if comment["toxicity"].to_f >= 0.7
 
-            reason_text = reason_text.chomp # chomp to eat that last newline
+            reason_text += "\nComment has toxicity of #{comment["perspective_score"]}" if comment["perspective_score"].to_f >= 0.7
+
             cb.say (reason_text.empty? ? "Comment didn't match any regexes" : reason_text), room_id
           when 'rescan'
             c = cli.comments(comment["comment_id"])
