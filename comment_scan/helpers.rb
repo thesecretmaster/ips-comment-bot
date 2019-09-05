@@ -142,3 +142,15 @@ end
 def timestamp_to_date(timestamp)
   Time.at(timestamp.to_i).to_date
 end
+
+def random_response()
+  responses = ["Ain't that the truth.",
+               "You're telling me.",
+               "Yep. That's about the size of it.",
+               "That's what I've been saying for $(AGE_OF_BOT)!",
+               "What else is new?",
+               "For real?",
+               "Humans, amirite?"]
+
+  return responses[rand(responses.length())]
+end

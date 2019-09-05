@@ -65,7 +65,8 @@ cb.gen_hooks do
         comment = mc_comment
         if !comment.nil?
           comment = Comment.find_by(comment_id: comment.id) if comment.is_a? SE::API::Comment
-          case msg.body.split(' ')[1].downcase
+          reply_args = msg.body.split(' ')
+          case reply_args[1].downcase
           when 'tp'
             comment.tps ||= 0
             comment.tps += 1
@@ -119,7 +120,12 @@ cb.gen_hooks do
               scan_comments(c, cli:cli, settings:settings, cb:cb)
             end
           else
-            cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
+            if reply_args.length > 2 #They're not trying to give a command
+              #Maybe make conversation back (20% chance)
+              cb.say random_response(), room_id if rand() > 0.8
+            else
+              cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
+            end
           end
           comment.save
         elsif !hg_comment.nil?
