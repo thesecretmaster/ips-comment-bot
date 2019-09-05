@@ -122,7 +122,7 @@ cb.gen_hooks do
           else
             if reply_args.length > 2 #They're not trying to give a command
               #Maybe make conversation back (20% chance)
-              cb.say random_response(), room_id if rand() > 0.8
+              cb.say ":#{msg.id} #{random_response()}", room_id if rand() > 0.8
             else
               cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
             end
