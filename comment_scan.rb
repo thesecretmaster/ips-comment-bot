@@ -440,6 +440,30 @@ cb.gen_hooks do
         say reasons.join("\n")
       end
     end
+    command "!!/regexstats" do |bot, reason|
+      if matches_bot(bot)
+        #Build array of hashes for each regex containing info to build the stat output
+        regexes = (reason.nil? ? Reason.all : Reason.where(name: reason)).map do |r|
+          r.regexes.map do |regex| 
+            tps = Comment.where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
+            fps = Comment.where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
+            {"effectivePercent" => (tps + fps > 0) ? tps/(tps + fps.to_f) : 0, 
+             "tps" => tps, "fps" => fps, "postType" => regex.post_type, "regex" => regex.regex, "reason" => r.name}
+          end
+        end
+        regexes = regexes.flatten.sort_by { |regex| regex["effectivePercent"] } #Order by effectiveness
+
+        #Figure out proper widths for columns
+        most_popular_regex = regexes.max { |a, b| a["tps"] + a["fps"] <=> b["tps"] + b["fps"] }
+        tpfp_width = (("#{most_popular_regex["tps"] + most_popular_regex["fps"]}".length) * 2) + 4
+        percent_width =  regexes.any? { |regex| regex["tps"] != 0 && regex["fps"] == 0 } ? '%-7.7s' : '%-6.6s'
+
+        #This is pretty ugly. Maybe split this out into a function and do it nicer?
+        say regexes.map { |r| ["    ", percent_width % "#{percent_str(r["tps"], r["tps"] + r["fps"], 1, "n/a")}",
+                               "%-#{tpfp_width}.#{tpfp_width}s" % "(#{r["tps"]}/#{r["tps"] + r["fps"]})", "| #{r["regex"]} "\
+                              "(#{r["postType"]} - #{r["reason"]})"].join() }.join("\n")
+      end
+    end
   end
 end
 
