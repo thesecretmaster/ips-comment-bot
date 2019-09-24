@@ -122,7 +122,7 @@ cb.gen_hooks do
           else
             if reply_args.length > 2 #They're not trying to give a command
               #Maybe make conversation back (33% chance)
-              cb.say ":#{msg.id} #{random_response()}", room_id if rand() > 0.67
+              cb.say ":#{msg.id} #{random_response}", room_id if rand() > 0.67
             else
               cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
             end
@@ -316,17 +316,17 @@ cb.gen_hooks do
           tp_msg = [ # Generate tp line
             'tp'.center(6),
             tps.round(0).to_s.center(11),
-            percent_str(tps, total).center(14),
-            percent_str(tps, Comment.where("tps >= ?", 1).count).center(15),
-            percent_str(tps, Comment.count).center(18),
+            percent_str(numerator: tps, denominator: total).center(14),
+            percent_str(numerator: tps, denominator: Comment.where("tps >= ?", 1).count).center(15),
+            percent_str(numerator: tps, denominator: Comment.count).center(18),
           ].join('|')
 
           fp_msg = [ # Generate fp line
             'fp'.center(6),
             fps.round(0).to_s.center(11),
-            percent_str(fps, total).center(14),
-            percent_str(fps, Comment.where("fps >= ?", 1).count).center(15),
-            percent_str(fps, Comment.count).center(18),
+            percent_str(numerator: fps, denominator: total).center(14),
+            percent_str(numerator: fps, denominator: Comment.where("fps >= ?", 1).count).center(15),
+            percent_str(numerator: fps, denominator: Comment.count).center(18),
           ].join('|')
 
           total_msg = [ # Generate total line
@@ -334,7 +334,7 @@ cb.gen_hooks do
             total.round(0).to_s.center(11),
             '-'.center(14),
             '-'.center(15),
-            percent_str(total, Comment.count).center(18),
+            percent_str(numerator: total, denominator: Comment.count).center(18),
           ].join('|')
 
           # Generate header line
@@ -431,7 +431,7 @@ cb.gen_hooks do
     command("!!/ttscan") { |bot| say "#{sleeptime} seconds remaning until the next scan" if matches_bot(bot) }
     command("!!/regexes") do |bot, reason|
       if matches_bot(bot)
-        reasons = (reason.nil? ? Reason.all : Reason.where(name: reason)).map do |r|
+        reasons = (reason.nil? ? Reason.all : Reason.where(["name LIKE ?", "%#{reason}%"])).map do |r|
           regexes = r.regexes.map { |regex| "- #{regex.post_type}: #{regex.regex}" }
           "#{r.name.gsub(/\(\@(\w*)\)/, '(*\1)')}:\n#{regexes.join("\n")}"
         end
@@ -443,25 +443,31 @@ cb.gen_hooks do
     command "!!/regexstats" do |bot, reason|
       if matches_bot(bot)
         #Build array of hashes for each regex containing info to build the stat output
-        regexes = (reason.nil? ? Reason.all : Reason.where(name: reason)).map do |r|
+        regexes = (reason.nil? ? Reason.all : Reason.where(["name LIKE ?", "%#{reason}%"])).map do |r|
           r.regexes.map do |regex| 
             tps = Comment.where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
             fps = Comment.where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
-            {"effectivePercent" => (tps + fps > 0) ? tps/(tps + fps.to_f) : 0, 
-             "tps" => tps, "fps" => fps, "postType" => regex.post_type, "regex" => regex.regex, "reason" => r.name}
+            {:effectivePercent => (tps + fps > 0) ? tps/(tps + fps).to_f : 0, 
+             :tps => tps, :fps => fps, :postType => regex.post_type, :regex => regex.regex, :reason => r.name}
           end
         end
-        regexes = regexes.flatten.sort_by { |regex| regex["effectivePercent"] } #Order by effectiveness
+        regexes = regexes.flatten.sort_by { |regex| regex[:effectivePercent] } #Order by effectiveness
 
         #Figure out proper widths for columns
-        most_popular_regex = regexes.max { |a, b| a["tps"] + a["fps"] <=> b["tps"] + b["fps"] }
-        tpfp_width = (("#{most_popular_regex["tps"] + most_popular_regex["fps"]}".length) * 2) + 4
-        percent_width =  regexes.any? { |regex| regex["tps"] != 0 && regex["fps"] == 0 } ? '%-7.7s' : '%-6.6s'
+        most_popular_regex = regexes.max { |a, b| a[:tps] + a[:fps] <=> b[:tps] + b[:fps] }
+        tpfp_width = (("#{most_popular_regex[:tps] + most_popular_regex[:fps]}".length) * 2) + 4
+        percent_width =  regexes.any? { |regex| regex[:tps] != 0 && regex[:fps] == 0 } ? 7 : 6
 
-        #This is pretty ugly. Maybe split this out into a function and do it nicer?
-        say regexes.map { |r| ["    ", percent_width % "#{percent_str(r["tps"], r["tps"] + r["fps"], 1, "n/a")}",
-                               "%-#{tpfp_width}.#{tpfp_width}s" % "(#{r["tps"]}/#{r["tps"] + r["fps"]})", "| #{r["regex"]} "\
-                              "(#{r["postType"]} - #{r["reason"]})"].join() }.join("\n")
+        #Put it all together...
+        say regexes.map { |r| 
+          [
+            "".ljust(4),
+             percent_str(numerator: r[:tps], denominator: r[:tps] + r[:fps],
+                         precision: 1, blank_str: "n/a").ljust(percent_width),
+            "(#{r[:tps]}/#{r[:tps] + r[:fps]})".ljust(tpfp_width),
+            "| #{r[:regex]} (#{r[:postType]} - #{r[:reason]})"
+          ].join
+        }.join("\n")
       end
     end
   end
