@@ -316,17 +316,17 @@ cb.gen_hooks do
           tp_msg = [ # Generate tp line
             'tp'.center(6),
             tps.round(0).to_s.center(11),
-            percent_str(numerator: tps, denominator: total).center(14),
-            percent_str(numerator: tps, denominator: Comment.where("tps >= ?", 1).count).center(15),
-            percent_str(numerator: tps, denominator: Comment.count).center(18),
+            percent_str(tps, total).center(14),
+            percent_str(tps, Comment.where("tps >= ?", 1).count).center(15),
+            percent_str(tps, Comment.count).center(18),
           ].join('|')
 
           fp_msg = [ # Generate fp line
             'fp'.center(6),
             fps.round(0).to_s.center(11),
-            percent_str(numerator: fps, denominator: total).center(14),
-            percent_str(numerator: fps, denominator: Comment.where("fps >= ?", 1).count).center(15),
-            percent_str(numerator: fps, denominator: Comment.count).center(18),
+            percent_str(fps, total).center(14),
+            percent_str(fps, Comment.where("fps >= ?", 1).count).center(15),
+            percent_str(fps, Comment.count).center(18),
           ].join('|')
 
           total_msg = [ # Generate total line
@@ -334,7 +334,7 @@ cb.gen_hooks do
             total.round(0).to_s.center(11),
             '-'.center(14),
             '-'.center(15),
-            percent_str(numerator: total, denominator: Comment.count).center(18),
+            percent_str(total, Comment.count).center(18),
           ].join('|')
 
           # Generate header line
@@ -431,7 +431,7 @@ cb.gen_hooks do
     command("!!/ttscan") { |bot| say "#{sleeptime} seconds remaning until the next scan" if matches_bot(bot) }
     command("!!/regexes") do |bot, reason|
       if matches_bot(bot)
-        reasons = (reason.nil? ? Reason.all : Reason.where(["name LIKE ?", "%#{reason}%"])).map do |r|
+        reasons = (reason.nil? ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
           regexes = r.regexes.map { |regex| "- #{regex.post_type}: #{regex.regex}" }
           "#{r.name.gsub(/\(\@(\w*)\)/, '(*\1)')}:\n#{regexes.join("\n")}"
         end
@@ -443,7 +443,7 @@ cb.gen_hooks do
     command "!!/regexstats" do |bot, reason|
       if matches_bot(bot)
         #Build array of hashes for each regex containing info to build the stat output
-        regexes = (reason.nil? ? Reason.all : Reason.where(["name LIKE ?", "%#{reason}%"])).map do |r|
+        regexes = (reason.nil? ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
           r.regexes.map do |regex| 
             tps = Comment.where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
             fps = Comment.where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
@@ -462,7 +462,7 @@ cb.gen_hooks do
         say regexes.map { |r| 
           [
             "".ljust(4),
-             percent_str(numerator: r[:tps], denominator: r[:tps] + r[:fps],
+             percent_str(r[:tps], r[:tps] + r[:fps],
                          precision: 1, blank_str: "n/a").ljust(percent_width),
             "(#{r[:tps]}/#{r[:tps] + r[:fps]})".ljust(tpfp_width),
             "| #{r[:regex]} (#{r[:postType]} - #{r[:reason]})"
