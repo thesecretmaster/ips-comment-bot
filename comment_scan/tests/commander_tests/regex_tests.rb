@@ -24,4 +24,74 @@ class  RegexTest < Test::Unit::TestCase
         wipe_db
     end
 
+    def test_add_regex_new_reason_q
+        test_regex = 'regex'
+        test_reason = 'reason'
+
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot q #{test_regex} #{test_reason}")
+
+        assert_equal(1, Regex.where(post_type: 'q', regex: test_regex).length, "Regex was not added.")
+        assert_equal(1, Reason.where(name: test_reason).length, "Reason was not added.")
+        assert_equal(Regex.where(post_type: 'q', regex: test_regex)[0].reason_id, Reason.where(name: test_reason)[0].id, "Regex was not properly linked to reason.")
+    end
+
+    def test_add_regex_new_reason_a
+        test_regex = 'regex'
+        test_reason = 'reason'
+
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot a #{test_regex} #{test_reason}")
+
+        assert_equal(1, Regex.where(post_type: 'a', regex: test_regex).length, "Regex was not added.")
+        assert_equal(1, Reason.where(name: test_reason).length, "Reason was not added.")
+        assert_equal(Regex.where(post_type: 'a', regex: test_regex)[0].reason_id, Reason.where(name: test_reason)[0].id, "Regex was not properly linked to reason.")
+    end
+
+    def test_add_multiword_reason
+        test_regex = 'regex'
+        test_reason = 'multi word reason'
+
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot a #{test_regex} #{test_reason}")
+
+        assert_equal(1, Regex.where(post_type: 'a', regex: test_regex).length, "Regex was not added.")
+        assert_equal(1, Reason.where(name: test_reason).length, "Reason was not added.")
+        assert_equal(Regex.where(post_type: 'a', regex: test_regex)[0].reason_id, Reason.where(name: test_reason)[0].id, "Regex was not properly linked to reason.")
+    end
+
+    def test_del_regex_not_reason
+        test_regex1 = 'regex1'
+        test_regex2 = 'regex2'
+        test_reason = 'reason'
+
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot a #{test_regex1} #{test_reason}")
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot a #{test_regex2} #{test_reason}")
+
+        @chatter.simulate_message(@chatter.HQroom, "!!/del testbot a #{test_regex1}")
+
+        assert_equal(0, Regex.where(post_type: 'a', regex: test_regex1).length, "Regex was not deleted.")
+        assert_equal(1, Regex.where(post_type: 'a', regex: test_regex2).length, "Regex was incorrectly deleted.")
+        assert_equal(1, Reason.where(name: test_reason).length, "Reason was incorrectly deleted.")
+    end
+
+    def test_del_regex_AND_reason
+        test_regex = 'regex'
+        test_reason = 'reason'
+
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot a #{test_regex} #{test_reason}")
+        @chatter.simulate_message(@chatter.HQroom, "!!/del testbot a #{test_regex}")
+
+        assert_equal(0, Regex.where(post_type: 'a', regex: test_regex).length, "Regex was not deleted.")
+        assert_equal(0, Reason.where(name: test_reason).length, "Reason was not deleted.")
+    end
+
+    def test_print_regexes
+        # !!/regexes output usually already has the words "Reason" and "Regex", so had to get creative here
+        test_regex = 'random_words'
+        test_reason = 'what_do_i_even_put_here'
+
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot a #{test_regex} #{test_reason}")
+        @chatter.simulate_message(@chatter.HQroom, "!!/regexes testbot")
+
+        assert([test_regex, test_reason].all? { |str| @chatter.chats[@chatter.HQroom][-1].include? str }) #, "Whitelist reported incorrectly")
+    end
+
 end
