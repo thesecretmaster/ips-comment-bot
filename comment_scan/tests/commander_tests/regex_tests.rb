@@ -57,6 +57,17 @@ class  RegexTest < Test::Unit::TestCase
         assert_equal(Regex.where(post_type: 'a', regex: test_regex)[0].reason_id, Reason.where(name: test_reason)[0].id, "Regex was not properly linked to reason.")
     end
 
+    def test_add_malformed_regex
+        test_regex = 'malformed(regex'
+        test_reason = 'reason'
+
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot a #{test_regex} #{test_reason}")
+
+        assert(@chatter.chats[@chatter.HQroom].any? { |chat| chat.downcase.include? "invalid" }) #, "Error message not displayed")
+        assert_equal(0, Regex.where(post_type: 'a', regex: test_regex).length, "Regex was incorrectly added.")
+        assert_equal(0, Reason.where(name: test_reason).length, "Reason was incorrectly added.")
+    end
+
     def test_del_regex_not_reason
         test_regex1 = 'regex1'
         test_regex2 = 'regex2'
@@ -91,7 +102,7 @@ class  RegexTest < Test::Unit::TestCase
         @chatter.simulate_message(@chatter.HQroom, "!!/add testbot a #{test_regex} #{test_reason}")
         @chatter.simulate_message(@chatter.HQroom, "!!/regexes testbot")
 
-        assert([test_regex, test_reason].all? { |str| @chatter.chats[@chatter.HQroom][-1].include? str }) #, "Whitelist reported incorrectly")
+        assert([test_regex, test_reason].all? { |str| @chatter.chats[@chatter.HQroom][-1].include? str }) #, "Regex reported incorrectly")
     end
 
 end

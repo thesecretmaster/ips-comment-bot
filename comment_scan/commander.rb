@@ -296,16 +296,17 @@ def add(commander, room_id, bot, type, regex, *reason)
         return
     end
 
+    begin
+        %r{#{regex}}
+    rescue RegexpError => e
+        commander.chatter.say("Invalid regex: #{regex}", room_id)
+        commander.chatter.say("    #{e}", room_id)
+        return
+    end
+
     if reason = Reason.find_or_create_by(name: reason.join(' '))
-        begin
-            %r{#{regex}}
-        rescue RegexpError => e
-            commander.chatter.say("Invalid regex: #{regex}", room_id)
-            commander.chatter.say("    #{e}", room_id)
-        else
-            if r = reason.regexes.create(post_type: type[0], regex: regex)
-                commander.chatter.say("Added regex #{r.regex} for post_type #{r.post_type} with reason '#{r.reason.name}'", room_id)
-            end
+        if r = reason.regexes.create(post_type: type[0], regex: regex)
+            commander.chatter.say("Added regex #{r.regex} for post_type #{r.post_type} with reason '#{r.reason.name}'", room_id)
         end
     end
 end
