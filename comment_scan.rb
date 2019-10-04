@@ -6,11 +6,14 @@ require 'time'
 require 'yaml'
 require './db'
 require 'pry-byebug'
-
+  
 require_relative 'comment_scan/message_collection'
 require_relative 'comment_scan/helpers'
 require_relative 'comment_scan/chatter'
+require_relative 'comment_scan/seclient'
 require_relative 'comment_scan/commander'
+require_relative 'comment_scan/replier'
+require_relative 'comment_scan/comment_scanner'
 
 IO.write("bot.pid", Process.pid.to_s)
 
@@ -27,17 +30,28 @@ def main()
     Room.find_or_create_by(room_id: room_id)
   end
 
+  #@logger = Logger.new('msg.log')
+
   chatter = Chatter.new(settings["ChatXUsername"], settings["ChatXPassword"], settings["hq_room_id"].to_i, settings["rooms"])
-  commander = Commander.new(chatter, bot_names)
-  #replier = Replier.new(...) #Coming soon!
+  seclient = SEClient.new(settings["APIKey"], settings["site"])
+  scanner = CommentScanner.new(seclient, chatter, settings["all_comments"], perspective_key: settings['perspective_key'], perspective_log: Logger.new('perspective.log'))
+  commander = Commander.new(chatter, seclient, scanner, bot_names)
+  replier = Replier.new(chatter, seclient, scanner, bot_names)
 
   commander.setup_basic_commands()
   commander.setup_HQ_commands()
+  replier.setup_reply_actions()
+  replier.setup_mention_actions()
 
   @post_on_startup = ARGV[0].to_i || 0
+
+  #TODO: Use this to get cats:
+  # require 'httparty'
+  # HTTParty.post("https://aws.random.cat/meow").parsed_response.first.second
 end
 
 main
+
 
 #chatter.add_command_action(chatter.HQroom, "!!/first") do
 #  chatter.say("No *I'm* first.", chatter.HQroom)
@@ -225,150 +239,6 @@ main
 #comments = cli.comments[0..-1]
 
 #@last_creation_date = comments[@post_on_startup].json["creation_date"].to_i+1 unless comments[@post_on_startup].nil?
-
-#@logger = Logger.new('msg.log')
-#@perspective_log = Logger.new('perspective.log')
-
-#def scan_comments(*comments, cli:, settings:, cb:, perspective_log: Logger.new('/dev/null'))
-  #comments.flatten.each do |comment|
-
-    #body = comment.json["body_markdown"]
-    #toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
-
-    #if dbcomment = record_comment(comment, perspective_score: toxicity)
-      ## MessageCollection::ALL_ROOMS.swap_key(comment, dbcomment)
-      #report_comments(dbcomment,cli: cli, settings: settings, cb: cb, should_post_matches: true)
-    #end
-
-    ## if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
-    ##   Thread.new do
-    ##     sleep 60
-    ##     msgs.each do |msg|
-    ##       cb.delete(msg.to_i)
-    ##     end
-    ##   end
-    ## end
-
-    ## @logger.info "Parsed comment:"
-    ## @logger.info "(JSON) #{comment.json}"
-    ## @logger.info "(SE::API::Comment) #{comment.inspect}"
-    ## @logger.info "Current time: #{Time.new.to_i}"
-
-    ## rval = cb.say(comment.link, 63296)
-    ## cb.delete(rval.to_i)
-    ## cb.say(msg, 63296)
-
-  #end
-#end
-
-#def report_comments(*comments, cli:, settings:, cb:, should_post_matches: true)
-  #comments.flatten.each do |comment|
-
-    #user =  Array(User.where(id: comment["owner_id"]).as_json)
-    #user = user.any? ? user[0] : false # if user was deleted, set it to false for easy checking
-
-    #puts "Grab metadata..."
-
-
-    #author = user ? user["display_name"] : "(removed)"
-    #author_link = user ? "[#{author}](#{user["link"]})" : "(removed)"
-    #rep = user ? "#{user["reputation"]} rep" : "(removed) rep"
-
-    #date = Time.at(comment["creation_date"].to_i)
-    #seconds = (Time.new - date).to_i
-    #ts = seconds < 60 ? "#{seconds} seconds ago" : "#{seconds/60} minutes ago"
-
-    #puts "Grab post data/build message to post..."
-
-    #msg = "##{comment["post_id"]} #{author_link} (#{rep})"
-
-    #puts "Analyzing post..."
-
-    #post_inactive = false # Default to false in case we can't access post
-    #post = [] # so that we can use this later for whitelisted users
-
-    #if post = post_exists?(cli, comment.post_id) # If post wasn't deleted, do full print
-      #author = user_for post.owner
-      #editor = user_for post.last_editor
-      #creation_ts = ts_for post.json["creation_date"]
-      #edit_ts = ts_for post.json["last_edit_date"]
-      #type = post.type[0].upcase
-      #closed = post.json["close_date"]
-
-      #post_inactive = timestamp_to_date(post.json["last_activity_date"]) < timestamp_to_date(comment["creation_date"]) - 30
-
-      #msg += " | [#{type}: #{post.title}](#{post.link}) #{'[c]' if closed} (score: #{post.score}) | posted #{creation_ts} by #{author}"
-      #msg += " | edited #{edit_ts} by #{editor}" unless edit_ts.empty? || editor.empty?
-    #end
-
-    ## toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
-    #toxicity = comment["perspective_score"].to_f
-
-    #puts "Building message..."
-    #msg += " | Toxicity #{toxicity}"
-    ## msg += " | Has magic comment" if !post_exists?(cli, comment["post_id"]) and has_magic_comment? comment, post
-    #msg += " | High toxicity" if toxicity >= 0.7
-    #msg += " | Comment on inactive post" if post_inactive
-    #msg += " | tps/fps: #{comment["tps"].to_i}/#{comment["fps"].to_i}"
-
-    #puts "Building comment body..."
-
-    ## If the comment exists, we can just post the link and ChatX will do the rest
-    ## Else, make a quote manually with just the body (no need to be fancy, this must be old)
-    ## (include a newline in the manual string to lift 500 character limit in chat)
-    ## TODO: Chat API is truncating to 500 characters right now even though we're good to post more. Fix this.
-    #comment_text_to_post = isCommentDeleted(cli, comment["comment_id"]) ? ("\n> " + comment["body"]) : comment["link"]
-
-    #puts "Check reasons..."
-
-    #report_text = report(comment["post_type"], comment["body_markdown"])
-    #reasons = report_raw(comment["post_type"], comment["body_markdown"]).map(&:reason)
-
-    #if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
-      #comment_text_to_post = "⚠️☢️\u{1F6A8} [Offensive/Abusive Comment](#{comment["link"]}) \u{1F6A8}☢️⚠️"
-    #end
-
-    #msgs = MessageCollection::ALL_ROOMS
-
-    #puts "Post chat message..."
-
-    #if settings['all_comments']
-      #msgs.push comment, cb.say(comment_text_to_post, HQ_ROOM_ID)
-      #msgs.push comment, cb.say(msg, HQ_ROOM_ID)
-      #msgs.push comment, cb.say(report_text, HQ_ROOM_ID) if report_text
-    ## To be totally honest, maintaining this is not worth it to me right now, so I'm gonna stop working on this setting
-    ## elsif !settings['all_comments'] && (has_magic_comment?(comment, post) || report_text) && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).flatten.include?(comment.owner.id.to_i)
-    #elsif !settings['all_comments'] && (report_text) && (post && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).flatten.include?(user["user_id"].to_i))
-      #msgs.push comment, cb.say(comment_text_to_post, HQ_ROOM_ID)
-      #msgs.push comment, cb.say(msg, HQ_ROOM_ID)
-      #msgs.push comment, cb.say(report_text, HQ_ROOM_ID) if report_text
-    #end
-
-    #ROOMS.each do |room_id|
-      #room = Room.find_by(room_id: room_id)
-      #if room.on
-        #should_post_message = (
-                                ## (room.magic_comment && has_magic_comment?(comment, post)) ||
-                                #(room.regex_match && report_text) ||
-                                #toxicity >= 0.7 || # I should add a room property for this
-                                #post_inactive # And this
-                              #) && should_post_matches && user &&
-                              #post && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
-                              #(user['user_type'] != 'moderator')
-
-        #if should_post_message
-          #msgs.push comment, cb.say(comment_text_to_post, room_id)
-          #msgs.push comment, cb.say(msg, room_id)
-          #msgs.push comment, cb.say(report_text, room_id) if room.regex_match && report_text
-        #end
-      #end
-    #end
-
-  #end
-
-  #puts "Processing complete!"
-
-#end
 
 #sleep 1 # So we don't get chat errors for 3 messages in a row
 

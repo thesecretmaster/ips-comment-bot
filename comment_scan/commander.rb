@@ -2,10 +2,12 @@ require 'time'
 require './db'
 
 class Commander
-    attr_reader :chatter, :BOT_NAMES, :start_time
+    attr_reader :chatter, :seclient, :scanner, :BOT_NAMES, :start_time
 
-    def initialize(chatter, bot_names)
+    def initialize(chatter, seclient, scanner, bot_names)
         @chatter = chatter
+        @seclient = seclient
+        @scanner = scanner
         @BOT_NAMES = bot_names
 
         @basic_commands = Hash.new()
@@ -175,8 +177,7 @@ end
 
 def quota(commander, room_id, bot='*')
     return unless commander.matches_bot?(bot)
-    #TODO: Figure out the cli situation
-    #commander.chatter.say "#{cli.quota} requests remaining"
+    commander.chatter.say "#{commander.seclient.quota} requests remaining"
 end
 
 def uptime(commander, room_id, bot='*')
@@ -313,14 +314,7 @@ end
 
 def cid(commander, room_id, bot, *cids)
     return unless commander.matches_bot?(bot)
-    c = Comment.find_by(comment_id: cid)
-    if c
-        #TODO: Fix this once we figure out how reporting comments works
-        #report_comments(c, cli: cli, settings: settings, cb: cb, should_post_matches: false)
-    else
-        commander.chatter.say("Could not find comment with id #{cid}", room_id)
-    end
-
+    commander.scanner.scan_comments_from_db(cids)
 end
 
 def pull(commander, room_id, bot='*', num_to_post=0, update_bundle=false)
@@ -361,16 +355,9 @@ def rev(commander, room_id, bot='*')
     commander.chatter.say("Currently at rev #{`git rev-parse --short HEAD`.chop} on branch #{`git rev-parse --abbrev-ref HEAD`.chop}", room_id)
 end
 
-def manscan(commander, room_id, bot='*', *cids)
+def manscan(commander, room_id, bot, *cids)
     return unless commander.matches_bot?(bot)
-    #TODO: Figure out cli
-    #c = cli.comments(args)
-    #if c.empty?
-      #say "No comments found for id(s) #{args.join(", ")}"
-    #else
-      #scan_comments(c, cli: cli, settings: settings, cb: cb)
-    #end
-
+    commander.chatter.say("No comments found for id(s) #{cids.join(", ")}", room_id) unless commander.scanner.scan_comments(cids)
 end
 
 def ttscan(commander, room_id, bot='*')

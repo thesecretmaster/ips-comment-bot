@@ -4,7 +4,6 @@ def setup_db(db_location)
   ActiveRecord::Base.establish_connection(
     adapter: "sqlite3",
     database: db_location
-    #database: "db/test_db.sqlite3"
   )
 end
 

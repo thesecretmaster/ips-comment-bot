@@ -52,6 +52,8 @@ def record_comment(comment, perspective_score:)
   end
   c.perspective_score = perspective_score
   c.se_creation_date = comment.creation_date
+  #TODO: This looks like a bug...it'll think that any comment with tps/fps marked doesn't exist (so I believe)
+  # couldn't we just do a lookup by id??
   if Comment.exists?(c.attributes.reject { |_k,v| v.nil? })
     Comment.find_by(c.attributes.reject { |_k,v| v.nil? })
   else
@@ -88,56 +90,56 @@ def has_magic_comment?(comment, post)
   end
 end
 
-def perspective_scan(text, perspective_key: '', perspective_log: Logger.new('/dev/null'))
-  if perspective_key
-    puts "Perspective scan..."
-    response = HTTParty.post("https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=#{perspective_key}",
-    :body => {
-        "comment" => {
-          text: text,
-          type: 'PLAIN_TEXT' # This should eventually be HTML, when perspective supports it
-        },
-        "context" => {}, # Not yet supported
-        "requestedAttributes" => {
-          'TOXICITY' => {
-            scoreType: 'PROBABILITY',
-            scoreThreshold: 0
-          }
-        },
-        "languages" => ["en"],
-        "doNotStore" => true,
-        "sessionId" => '' # Use this if there are multiple bots running
-      }.to_json,
-    :headers => { 'Content-Type' => 'application/json' } )
-
-    perspective_log.info response
-    perspective_log.info response.dig("attributeScores")
-    perspective_log.info response.dig("attributeScores", "TOXICITY")
-    perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore")
-    perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
-    response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
-  else
-    'NoKey'
-  end
-end
+#def perspective_scan(text, perspective_key: '', perspective_log: Logger.new('/dev/null'))
+#  if perspective_key
+#    puts "Perspective scan..."
+#    response = HTTParty.post("https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=#{perspective_key}",
+#    :body => {
+#        "comment" => {
+#          text: text,
+#          type: 'PLAIN_TEXT' # This should eventually be HTML, when perspective supports it
+#        },
+#        "context" => {}, # Not yet supported
+#        "requestedAttributes" => {
+#          'TOXICITY' => {
+#            scoreType: 'PROBABILITY',
+#            scoreThreshold: 0
+#          }
+#        },
+#        "languages" => ["en"],
+#        "doNotStore" => true,
+#        "sessionId" => '' # Use this if there are multiple bots running
+#      }.to_json,
+#    :headers => { 'Content-Type' => 'application/json' } )
+#
+#    perspective_log.info response
+#    perspective_log.info response.dig("attributeScores")
+#    perspective_log.info response.dig("attributeScores", "TOXICITY")
+#    perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore")
+#    perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
+#    response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
+#  else
+#    'NoKey'
+#  end
+#end
 
 def percent_str(numerator, denominator, precision: 8, blank_str: '-')
   return blank_str if denominator.zero?
   "#{(numerator*100.0/denominator).round(precision)}%"
 end
 
-def post_exists?(cli, post_id)
-  the_post = cli.posts(post_id.to_i)
-  if Array(the_post).empty?
-    nil
-  else
-    the_post.first
-  end
-end
+#def post_exists?(cli, post_id)
+#  the_post = cli.posts(post_id.to_i)
+#  if Array(the_post).empty?
+#    nil
+#  else
+#    the_post.first
+#  end
+#end
 
-def isCommentDeleted(cli, comment_id)
-  Array(cli.comments(comment_id.to_s)).empty?
-end
+#def isCommentDeleted(cli, comment_id)
+#  Array(cli.comments(comment_id.to_s)).empty?
+#end
 
 def timestamp_to_date(timestamp)
   Time.at(timestamp.to_i).to_date
