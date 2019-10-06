@@ -42,44 +42,15 @@ def user_for(author)
   "[#{name}](#{link}) (#{rep} rep)"
 end
 
-def record_comment(comment, perspective_score:)
-  return false unless comment.is_a? SE::API::Comment
-  c = Comment.new
-  %i[body body_markdown comment_id edited link post_id post_type score].each do |f|
-    value = comment.send(f)
-    value = HTMLEntities.new.decode(value) if %i[body body_markdown].include? f
-    c.send(:"#{f}=", value)
-  end
-  c.perspective_score = perspective_score
-  c.se_creation_date = comment.creation_date
-  #TODO: This looks like a bug...it'll think that any comment with tps/fps marked doesn't exist (so I believe)
-  # couldn't we just do a lookup by id??
-  if Comment.exists?(c.attributes.reject { |_k,v| v.nil? })
-    Comment.find_by(c.attributes.reject { |_k,v| v.nil? })
-  else
-    api_u = comment.owner
-    u = User.find_or_create_by(user_id: api_u.id)
-    u.update(display_name: api_u.name, reputation: api_u.reputation, link: api_u.link, user_type: api_u.type)
-    c.owner = u
-    puts u.inspect
-    puts c.inspect
-    if c.save
-      c
-    else
-      puts c.errors.full_messages
-    end
-  end
-end
-
-def report_raw(post_type, comment)
+def report_raw(post_type, comment_body)
   regexes = Regex.where(post_type: post_type[0].downcase)
   regexes.select do |regex|
-    %r{#{regex.regex}}.match? comment.downcase
+    %r{#{regex.regex}}.match? comment_body.downcase
   end
 end
 
-def report(post_type, comment)
-  matching_regexes = report_raw(post_type, comment)
+def report(post_type, comment_body)
+  matching_regexes = report_raw(post_type, comment_body)
   return "Matched regex(es) #{matching_regexes.map { |r| r.reason.nil? ? r.regex : r.reason.name }.uniq }" unless matching_regexes.empty?
 end
 
@@ -90,56 +61,10 @@ def has_magic_comment?(comment, post)
   end
 end
 
-#def perspective_scan(text, perspective_key: '', perspective_log: Logger.new('/dev/null'))
-#  if perspective_key
-#    puts "Perspective scan..."
-#    response = HTTParty.post("https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=#{perspective_key}",
-#    :body => {
-#        "comment" => {
-#          text: text,
-#          type: 'PLAIN_TEXT' # This should eventually be HTML, when perspective supports it
-#        },
-#        "context" => {}, # Not yet supported
-#        "requestedAttributes" => {
-#          'TOXICITY' => {
-#            scoreType: 'PROBABILITY',
-#            scoreThreshold: 0
-#          }
-#        },
-#        "languages" => ["en"],
-#        "doNotStore" => true,
-#        "sessionId" => '' # Use this if there are multiple bots running
-#      }.to_json,
-#    :headers => { 'Content-Type' => 'application/json' } )
-#
-#    perspective_log.info response
-#    perspective_log.info response.dig("attributeScores")
-#    perspective_log.info response.dig("attributeScores", "TOXICITY")
-#    perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore")
-#    perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
-#    response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
-#  else
-#    'NoKey'
-#  end
-#end
-
 def percent_str(numerator, denominator, precision: 8, blank_str: '-')
   return blank_str if denominator.zero?
   "#{(numerator*100.0/denominator).round(precision)}%"
 end
-
-#def post_exists?(cli, post_id)
-#  the_post = cli.posts(post_id.to_i)
-#  if Array(the_post).empty?
-#    nil
-#  else
-#    the_post.first
-#  end
-#end
-
-#def isCommentDeleted(cli, comment_id)
-#  Array(cli.comments(comment_id.to_s)).empty?
-#end
 
 def timestamp_to_date(timestamp)
   Time.at(timestamp.to_i).to_date

@@ -4,12 +4,21 @@ require_relative 'helpers'
 class CommentScanner
     attr_reader :seclient, :chatter
 
-    def initialize(seclient, chatter, post_all_comments, perspective_key: '', perspective_log: Logger.new('/dev/null'))
+    def initialize(seclient, chatter, post_all_comments, ignore_users, perspective_key: '', perspective_log: Logger.new('/dev/null'))
         @seclient = seclient
         @chatter = chatter
         @post_all_comments = post_all_comments
+        @ignore_users = ignore_users
         @perspective_key = perspective_key
         @perspective_log = perspective_log
+
+        @latest_comment_date = @seclient.latest_comment_date.to_i+1 unless @seclient.latest_comment_date.nil?
+    end
+
+    def scan_new_comments
+        new_comments = @seclient.comments_after_date(@latest_comment_date)
+        @latest_comment_date = new_comments[0].json["creation_date"].to_i+1 if new_comments.any? && !new_comments[0].nil?
+        scan_se_comments(new_comments)
     end
 
     def scan_comment(comment_id, should_post_matches: true)
@@ -27,7 +36,7 @@ class CommentScanner
     def scan_comment_from_db(comment_id)
         dbcomment = Comment.find_by(comment_id: comment_id)
         puts "Found #{dbcomment} for #{comment_id}"
-        #@chatter.say("Could not find comment with id #{comment_id}")
+
         if dbcomment.nil?
             @chatter.say("**BAD ID:** No comment exists in the database for id: #{comment_id}")
             return
@@ -45,22 +54,24 @@ class CommentScanner
         end
     end
 
-    def scan_se_comment(comment)
-        #comments.flatten.each do |comment|
-            body = comment.body_markdown
-            toxicity = perspective_scan(body).to_f
-
-            if dbcomment = record_comment(comment, perspective_score: toxicity)
-                report_db_comments(dbcomment, should_post_matches: true)
-            end
-
-            # @logger.info "Parsed comment:"
-            # @logger.info "(JSON) #{comment.json}"
-            # @logger.info "(SE::API::Comment) #{comment.inspect}"
-            # @logger.info "Current time: #{Time.new.to_i}"
-        #end
+    def scan_se_comments(comments)
+        comments.flatten.each { |comment| scan_se_comment(comment) }
     end
 
+    def scan_se_comment(comment)
+        body = comment.body_markdown
+        toxicity = perspective_scan(body).to_f
+
+        if dbcomment = record_comment(comment, perspective_score: toxicity)
+            report_db_comments(dbcomment, should_post_matches: true)
+        end
+    end
+
+    def scan_last_n_comments(num_comments)
+        return if num_comments.to_i < 1
+        comments_to_scan = @seclient.comments[0..(num_comments.to_i - 1)]
+        scan_se_comments(comments_to_scan)
+    end
 
     def report_db_comments(*comments, should_post_matches: true)
         comments.flatten.each { |comment| report_db_comment(comment, should_post_matches: should_post_matches) }
@@ -136,7 +147,7 @@ class CommentScanner
             msgs.push comment, @chatter.say(comment_text_to_post)
             msgs.push comment, @chatter.say(msg)
             msgs.push comment, @chatter.say(report_text) if report_text
-        elsif !@post_all_comments && (report_text) && (post && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).flatten.include?(user.user_id.to_i))
+        elsif !@post_all_comments && (report_text) && (post && !@ignore_users.map(&:to_i).push(post.owner.id).flatten.include?(user.user_id.to_i))
             msgs.push comment, @chatter.say(comment_text_to_post)
             msgs.push comment, @chatter.say(msg)
             msgs.push comment, @chatter.say(report_text) if report_text
@@ -152,7 +163,7 @@ class CommentScanner
                                     toxicity >= 0.7 || # I should add a room property for this
                                     post_inactive # And this
                                   ) && should_post_matches && user &&
-                                  post && !IGNORE_USER_IDS.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
+                                  post && !@ignore_users.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
                                   (user['user_type'] != 'moderator')
 
             if should_post_message

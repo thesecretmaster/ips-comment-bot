@@ -41,6 +41,7 @@ class Commander
         @HQ_commands["!!/rev"] = method(:rev)
         @HQ_commands["!!/manscan"] = method(:manscan)
         @HQ_commands["!!/ttscan"] = method(:ttscan)
+        @HQ_commands["!!/last"] = method(:last)
         @HQ_commands["!!/regexes"] = method(:regexes)
         @HQ_commands["!!/regexstats"] = method(:regexstats)
 
@@ -73,6 +74,15 @@ class Commander
 
     def on?(room_id)
         isHQ?(room_id) || Room.on?(room_id)
+    end
+
+    def restart(num_to_post, bundle)
+        if bundle == "true"
+            say "Updating bundle..."
+            log = `bundle install`
+            say "Update complete!\n#{"="*32}\n#{log}"
+        end
+        Kernel.exec("bundle exec ruby comment_scan.rb #{num_to_post.nil? ? @post_on_startup : num_to_post.to_i}")
     end
 
     #TODO: consider making some kind of check valid arg that'll return a bool and print "Bad! Arg must be in {X, Y, Z}"
@@ -223,12 +233,14 @@ end
 
 def howgood(commander, room_id, bot, type, regex)
     return unless commander.matches_bot?(bot)
+    puts type
     type = 'question' if type == 'q'
     type = 'answer' if type == 'a'
-    if !["q", "a", "*"].include? type
+    unless ["question", "answer", "*"].include? type
          commander.chatter.say("Type must be one of {q, a, question, answer, *}", room_id)
         return
     end
+
     if type == '*'
         tps = Comment.where("tps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
         fps = Comment.where("fps >= ?", 1).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }.to_f
@@ -326,7 +338,6 @@ def pull(commander, room_id, bot='*', num_to_post=0, update_bundle=false)
         #TODO: Fix this once we know how restart will work
         #restart num_to_post, bundle
     end
-
 end
 
 def master(commander, room_id, bot='*', *args)
@@ -364,6 +375,15 @@ def ttscan(commander, room_id, bot='*')
     return unless commander.matches_bot?(bot)
     #TODO: Figure out how to get time till next scan (need to write the scanner)
     #commander.chatter.say("#{sleeptime} seconds remaning until the next scan", room_id)
+end
+
+def last(commander, room_id, bot='*', num_comments="1")
+    return unless commander.matches_bot?(bot)
+    if !/\A\d+\z/.match(num_comments) || num_comments.to_i < 1
+        commander.chatter.say("Bad number. Call last with `!!/last <bot> <num_comments>` where num_commments is >0", room_id)
+    end
+
+    commander.scanner.scan_last_n_comments(num_comments)
 end
 
 def regexes(commander, room_id, bot='*', reason=nil)

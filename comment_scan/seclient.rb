@@ -35,6 +35,15 @@ class SEClient
         comments[num_to_ignore].json["creation_date"].to_i+1 unless comments[num_to_ignore].nil?
     end
 
+    def comments
+        @client.comments
+    end
+
+    def latest_comment_date
+        return nil if @client.comments[0].nil?
+        @client.comments[0].json["creation_date"]
+    end
+
     #TODO: For some reason this is always null...
     def quota
         @client.quota
