@@ -1,3 +1,5 @@
+require './db'
+
 class MockChatter
     attr_reader :HQroom, :rooms, :chats
 
@@ -11,6 +13,10 @@ class MockChatter
 
         @rooms ||= []
         (@rooms + [@HQroom]).each do |room_id|
+            r = Room.find_or_create_by(room_id: room_id) #setup defaults in db
+            Room.turn_on(room_id)
+            r.update(regex_match: true)
+
             @command_actions[room_id] = Hash.new()
             @chats[room_id] = []
         end

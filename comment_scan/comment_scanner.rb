@@ -19,16 +19,16 @@ class CommentScanner
     def scan_new_comments
         new_comments = @seclient.comments_after_date(@latest_comment_date)
         @latest_comment_date = new_comments[0].json["creation_date"].to_i+1 if new_comments.any? && !new_comments[0].nil?
-        scan_se_comments(new_comments)
+        scan_se_comments([new_comments])
     end
 
-    def scan_comment(comment_id, should_post_matches: true)
-        #Does the work of 
-        comment = seclient.comment_with_id(comment_id)
-        return false if comment == nil #Didn't actually scan
-
-        report_comment(comment, should_post_matches: should_post_matches)
-    end
+    #def scan_comment(comment_id, should_post_matches: true)
+    #    #Does the work of 
+    #    comment = seclient.comment_with_id(comment_id)
+    #    return false if comment == nil #Didn't actually scan
+    #
+    #    report_comment(comment, should_post_matches: should_post_matches)
+    #end
 
     def scan_comments_from_db(*comment_ids)
         comment_ids.flatten.each { |comment_id| scan_comment_from_db(comment_id) }

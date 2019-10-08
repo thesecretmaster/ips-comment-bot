@@ -34,7 +34,7 @@ def ts_for(ts)
 end
 
 def user_for(author)
-  return "" unless author.is_a? SE::API::User
+  #return "" unless author.is_a? SE::API::User
   name = author.name
   link = author.link&.gsub(/(^.*u[sers]{4}?\/\d*)\/.*$/, '\1')&.gsub("/users/", "/u/")
   rep = author.reputation

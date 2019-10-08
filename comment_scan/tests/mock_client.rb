@@ -7,7 +7,7 @@ class MockClient
         @comments = Hash.new()
         @posts = Hash.new()
         @users = Hash.new()
-        @last_creation_date = Date.new(2000,1,1) #Make things easy...go back to a simpler time
+        @last_creation_date = Date.new(2000,1,1).to_time #Make things easy...go back to a simpler time
         @last_id = 1
     end
 
@@ -16,11 +16,11 @@ class MockClient
     end 
 
     def comment_deleted?(comment_id)
-        @comments.key?(comment_id)
+        !@comments.key?(comment_id)
     end
 
     def comments_after_date(date)
-        @comments.select { |id, comment| comment.json["creation_date"] > date }
+        @comments.select { |id, comment| date.nil? || comment.json["creation_date"] > date }.values
     end
 
     def last_creation_date(num_to_ignore=0)
@@ -39,15 +39,29 @@ class MockClient
         biggest_user = @users.any? ? @users.keys.max : 0
         biggest_comment = @comments.any? ? @comments.keys.max : 0
 
-        comment_owner = MockUser.new(biggest_user + 1)
-        post_owner = MockUser.new(biggest_user + 2)
-        last_editor = MockUser.new(biggest_user + 3)
+        comment_owner = new_user(biggest_user + 1)
+        post_owner = new_user(biggest_user + 2)
+        last_editor = new_user(biggest_user + 3)
 
-        parent_post = MockPost.new(biggest_post + 1, Date.new(2000, 1, 1), post_type, post_owner, last_editor)
+        parent_post = new_post(biggest_post + 1, Date.new(2000, 1, 1).to_time, post_type, post_owner, last_editor)
 
-        new_comment = MockComment.new(biggest_comment + 1, @last_creation_date, parent_post.id, post_type, body, comment_owner)
+        @comments[biggest_comment + 1] = MockComment.new(biggest_comment + 1, @last_creation_date, parent_post.id, post_type, body, comment_owner)
 
-        return new_comment
+        return @comments[biggest_comment + 1]
+    end
+
+    def new_user(id)
+      @users[id] = MockUser.new(id)
+      @users[id]
+    end
+
+    def new_post(id, creation_date, post_type, owner, editor)
+      @posts[id] = MockPost.new(id, creation_date, post_type, owner, editor)
+      @posts[id]
+    end
+
+    def delete_comment(id)
+        @comments.delete(id)
     end
 
     class MockComment
