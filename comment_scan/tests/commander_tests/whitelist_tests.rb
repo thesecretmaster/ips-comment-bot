@@ -11,7 +11,8 @@ class WhitelistTest < Test::Unit::TestCase
 
         #Setup chatter/commander
         @chatter = MockChatter.new(1)
-        @commander = Commander.new(@chatter, ['testbot', '@testbot'])
+        #Client and scanner won't be used for these tests, so pass nil's
+        @commander = Commander.new(@chatter, nil, nil, ['testbot', '@testbot'])
 
         @commander.setup_basic_commands()
         @commander.setup_HQ_commands()

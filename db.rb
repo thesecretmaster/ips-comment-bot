@@ -17,7 +17,7 @@ def wipe_db
 end
 
 def record_comment(comment, perspective_score:)
-  return false unless comment.is_a? SE::API::Comment
+  #return false unless comment.is_a? SE::API::Comment
   c = Comment.new
   %i[body body_markdown comment_id edited link post_id post_type score].each do |f|
     value = comment.send(f)

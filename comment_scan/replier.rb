@@ -249,10 +249,10 @@ end
 def cat_mentions(replier, msg_id, room_id, message)
     return unless ["cat", "kitty", "kitties", "kitten"].any? { |cat_name| message.downcase.include? cat_name }
 
-    cat_response = HTTParty.post("https://aws.random.cat/meow").parsed_response
+    cat_response = HTTParty.post("https://aws.random.cat/meow")
     case cat_response.code
         when 200 #All good!
-            replier.chatter.say(":#{msg_id} #{cat_response["file"]}", room_id)
+            replier.chatter.say(":#{msg_id} #{cat_response.parsed_response["file"]}", room_id)
         when 404
             replier.chatter.say("O noes! Cats not found!", room_id)
         when 500...600

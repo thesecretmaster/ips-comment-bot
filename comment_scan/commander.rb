@@ -127,7 +127,7 @@ end
 def mode(commander, room_id, bot='*')
     return unless commander.matches_bot?(bot) && commander.on?(room_id)
     if commander.isHQ?(room_id)
-        commander.chatter.say("I'm in parent mode. I have children in rooms #{commander.chatter.rooms.map { |rid| "[#{rid}](https://chat.stackexchange.com/rooms/#{rid})"}.join(", ")}", room_id)
+        commander.chatter.say("I'm in parent mode. I have children in rooms #{commander.chatter.rooms.flatten.map { |rid| "[#{rid}](https://chat.stackexchange.com/rooms/#{rid})"}.join(", ")}", room_id)
     else
         commander.chatter.say("I'm in child mode. My parent is in [room #{commander.chatter.HQroom}](https://chat.stackexchange.com/rooms/#{commander.chatter.HQroom})", room_id)
     end

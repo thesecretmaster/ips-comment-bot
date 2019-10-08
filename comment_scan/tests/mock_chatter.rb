@@ -40,7 +40,7 @@ class MockChatter
         @reply_actions[args[0]].call(msg_id, parent_msg_id, room_id, *args) if @reply_actions.key?(args[0])
     end
 
-    def say(message, room)
+    def say(message, room=@HQroom)
         @chats[room] << message
     end
 end

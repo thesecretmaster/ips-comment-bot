@@ -1,5 +1,6 @@
 require './db'
 require_relative 'helpers'
+require_relative 'message_collection'
 
 class CommentScanner
     attr_reader :seclient, :chatter
@@ -153,9 +154,9 @@ class CommentScanner
             msgs.push comment, @chatter.say(report_text) if report_text
         end
 
-        @chatter.rooms.each do |room_id|
+        @chatter.rooms.flatten.each do |room_id|
             room = Room.find_by(room_id: room_id)
-            next unless room.on
+            next unless (!room.nil? && room.on)
 
             should_post_message = (
                                     # (room.magic_comment && has_magic_comment?(comment, post)) ||
