@@ -4,7 +4,6 @@ require './db'
 require 'pry-byebug'
   
 require_relative 'comment_scan/message_collection'
-require_relative 'comment_scan/helpers'
 require_relative 'comment_scan/chatter'
 require_relative 'comment_scan/seclient'
 require_relative 'comment_scan/commander'
@@ -45,8 +44,7 @@ sleeptime = 0
 loop do
   scanner.scan_new_comments
 
-  sleeptime = 60
-  while sleeptime > 0 do sleep 1; sleeptime -= 1 end
+  while scanner.tick do sleep 1; end
 end
 
 

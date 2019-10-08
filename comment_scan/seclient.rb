@@ -44,7 +44,6 @@ class SEClient
         @client.comments[0].json["creation_date"]
     end
 
-    #TODO: For some reason this is always null...
     def quota
         @client.quota
     end

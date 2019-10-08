@@ -1,4 +1,6 @@
 require './db'
+require 'httparty'
+require 'htmlentities'
 
 class Replier
     attr_reader :chatter, :scanner, :seclient, :BOT_NAMES
@@ -56,6 +58,22 @@ class Replier
     def show_first_n_comments(db_comments, num_to_display)
         # Pull comment_id's from the first num_to_display comments we matched to pass to scan
         db_comments.take(num_to_display).each { |comment| @scanner.repot_db_comment(comment, should_post_matches: true) }
+    end
+
+    def random_response()
+      responses = ["Ain't that the truth.",
+                   "You're telling me.",
+                   "Yep. That's about the size of it.",
+                   "That's what I've been saying for $(AGE_OF_BOT)!",
+                   "What else is new?",
+                   "For real?",
+                   "Humans, amirite?"]
+
+      return responses[rand(responses.length())]
+    end
+
+    def contains_cat(message)
+        ["cat", "kitty", "kitties", "kitten", "meow", "purr", "feline"].any? { |cat_name| message.downcase.include? cat_name }
     end
 end
 
@@ -234,7 +252,7 @@ def bad_command(replier, msg_id, parent_id, room_id, *args)
     if !db_comment.nil?
         if args.length > 0 #They're not trying to give a command
             #Maybe make conversation back (33% chance)
-            replier.chatter.say(":#{msg_id} #{random_response}", room_id) if rand() > 0.67
+            replier.chatter.say(":#{msg_id} #{replier.random_response}", room_id) if rand() > 0.67
         else
             replier.chatter.say("Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id)
         end
@@ -247,7 +265,7 @@ def bad_command(replier, msg_id, parent_id, room_id, *args)
 end
 
 def cat_mentions(replier, msg_id, room_id, message)
-    return unless ["cat", "kitty", "kitties", "kitten", "meow", "purr", "feline"].any? { |cat_name| message.downcase.include? cat_name }
+    return unless contains_cat(message)
 
     cat_response = HTTParty.post("https://aws.random.cat/meow")
     case cat_response.code

@@ -76,13 +76,30 @@ class Commander
         isHQ?(room_id) || Room.on?(room_id)
     end
 
-    def restart(num_to_post, bundle)
+    def restart_bot(num_to_post, bundle)
         if bundle == "true"
             say "Updating bundle..."
             log = `bundle install`
             say "Update complete!\n#{"="*32}\n#{log}"
         end
         Kernel.exec("bundle exec ruby comment_scan.rb #{num_to_post.nil? ? @post_on_startup : num_to_post.to_i}")
+    end
+
+    def percent_str(numerator, denominator, precision: 8, blank_str: '-')
+      return blank_str if denominator.zero?
+      "#{(numerator*100.0/denominator).round(precision)}%"
+    end
+
+    def to_sizes(filenames)
+      filenames.map do |filename|
+        full_name = "./#{filename}"
+        fsize, ext = File.size(full_name).to_f/(1024**2), "MB"
+        {
+          file: filename,
+          size: fsize,
+          ext: ext
+        }
+      end
     end
 
     #TODO: consider making some kind of check valid arg that'll return a bool and print "Bad! Arg must be in {X, Y, Z}"
@@ -204,11 +221,11 @@ end
 
 def logsize(commander, room_id, bot='*')
     return unless commander.matches_bot?(bot)
-    uncompressed = to_sizes(Dir['*.log']+Dir['*.log.1']).map do |sizes|
+    uncompressed = commander.to_sizes(Dir['*.log']+Dir['*.log.1']).map do |sizes|
         "#{sizes[:file]}: #{sizes[:size].round(2)}#{sizes[:ext]}"
     end
     compressed = {}
-    to_sizes(Dir['*.log*.gz']).each do |size|
+    commander.to_sizes(Dir['*.log*.gz']).each do |size|
         compressed[size[:file].split('.')[0]] ||= 0
         compressed[size[:file].split('.')[0]] += size[:size]
     end
@@ -227,8 +244,7 @@ def test(commander, room_id, bot, type, *body)
         return
     end
 
-    #TODO: Get this up and running when we figure out how we're reporting
-    #say(report(type, body.join(" ")) || "Didn't match any filters")
+    commander.chatter.say((commander.scanner.report(type, body.join(" ")) || "Didn't match any filters"), room_id)
 end
 
 def howgood(commander, room_id, bot, type, regex)
@@ -254,17 +270,17 @@ def howgood(commander, room_id, bot, type, regex)
     tp_msg = [ # Generate tp line
         'tp'.center(6),
         tps.round(0).to_s.center(11),
-        percent_str(tps, total).center(14),
-        percent_str(tps, Comment.where("tps >= ?", 1).count).center(15),
-        percent_str(tps, Comment.count).center(18),
+        commander.percent_str(tps, total).center(14),
+        commander.percent_str(tps, Comment.where("tps >= ?", 1).count).center(15),
+        commander.percent_str(tps, Comment.count).center(18),
     ].join('|')
 
     fp_msg = [ # Generate fp line
         'fp'.center(6),
         fps.round(0).to_s.center(11),
-        percent_str(fps, total).center(14),
-        percent_str(fps, Comment.where("fps >= ?", 1).count).center(15),
-        percent_str(fps, Comment.count).center(18),
+        commander.percent_str(fps, total).center(14),
+        commander.percent_str(fps, Comment.where("fps >= ?", 1).count).center(15),
+        commander.percent_str(fps, Comment.count).center(18),
     ].join('|')
 
     total_msg = [ # Generate total line
@@ -272,7 +288,7 @@ def howgood(commander, room_id, bot, type, regex)
         total.round(0).to_s.center(11),
         '-'.center(14),
         '-'.center(15),
-        percent_str(total, Comment.count).center(18),
+        commander.percent_str(total, Comment.count).center(18),
     ].join('|')
 
     # Generate header line
@@ -335,8 +351,7 @@ def pull(commander, room_id, bot='*', num_to_post=0, update_bundle=false)
         commander.chatter.say("Pulling is only permitted when running on the master branch. Currently on #{`git rev-parse --abbrev-ref HEAD`.chop}.", room_id)
     else
         `git pull`
-        #TODO: Fix this once we know how restart will work
-        #restart num_to_post, bundle
+        commander.restart_bot(num_to_post, update_bundle)
     end
 end
 
@@ -352,8 +367,7 @@ end
 
 def restart(commander, room_id, bot='*', num_to_post=0, update_bundle=false)
     return unless commander.matches_bot?(bot)
-    #TODO: Figure out how restart will work
-    #restart num_to_post, bundle
+    commander.restart_bot(num_to_post, update_bundle)
 end
 
 def kill(commander, room_id, bot='*')
@@ -373,8 +387,7 @@ end
 
 def ttscan(commander, room_id, bot='*')
     return unless commander.matches_bot?(bot)
-    #TODO: Figure out how to get time till next scan (need to write the scanner)
-    #commander.chatter.say("#{sleeptime} seconds remaning until the next scan", room_id)
+    commander.chatter.say("#{commander.scanner.time_to_scan} seconds remaning until the next scan", room_id)
 end
 
 def last(commander, room_id, bot='*', num_comments="1")
@@ -419,7 +432,7 @@ def regexstats(commander, room_id, bot='*', reason=nil)
     commander.chatter.say regexes.map { |r| 
         [
             "".ljust(4),
-            percent_str(r[:tps], r[:tps] + r[:fps],
+            commander.percent_str(r[:tps], r[:tps] + r[:fps],
                     precision: 1, blank_str: "n/a").ljust(percent_width),
             "(#{r[:tps]}/#{r[:tps] + r[:fps]})".ljust(tpfp_width),
             "| #{r[:regex]} (#{r[:postType]} - #{r[:reason]})"
