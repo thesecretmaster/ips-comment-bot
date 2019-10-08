@@ -1,7 +1,7 @@
 require 'date'
 
 class MockClient
-    attr_reader :comments, :posts
+    attr_reader :posts
 
     def initialize()
         @comments = Hash.new()
@@ -9,6 +9,11 @@ class MockClient
         @users = Hash.new()
         @last_creation_date = Date.new(2000,1,1).to_time #Make things easy...go back to a simpler time
         @last_id = 1
+    end
+
+    #alias--the real client gives an array of comments like this
+    def comments
+        @comments.values
     end
 
     def post_exists?(post_id)

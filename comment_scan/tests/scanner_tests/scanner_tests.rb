@@ -45,9 +45,9 @@ class ScannerTest < Test::Unit::TestCase
         @scanner.scan_comment_from_db(dbcomment.id)
 
         assert_equal(2, @chatter.chats[@chatter.HQroom].length, "Comment was not posted to HQroom")
-        assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 0 }) #Make sure comment wasn't posted to other rooms
         #Since the comment is deleted, we should be posting the body instead of a link
         assert(@chatter.chats[@chatter.HQroom][0].include?(test_body))
+        assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 0 }) #Make sure comment wasn't posted to other rooms
     end
 
     def test_scan_new
@@ -56,6 +56,15 @@ class ScannerTest < Test::Unit::TestCase
         @scanner.scan_new_comments
 
         assert_equal(2, @chatter.chats[@chatter.HQroom].length, "Comment was not posted to HQroom")
+        assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 0 }) #Make sure comment wasn't posted to other rooms
+    end
+
+    def test_scan_last_comments
+        [*1..4].each { |num| @client.new_comment("question", "I'm a new comment ##{num}!") }
+
+        @scanner.scan_last_n_comments(3)
+
+        assert_equal(6, @chatter.chats[@chatter.HQroom].length, "Not all comments posted to HQroom")
         assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 0 }) #Make sure comment wasn't posted to other rooms
     end
 
@@ -68,8 +77,26 @@ class ScannerTest < Test::Unit::TestCase
 
         @scanner.scan_new_comments
 
+        #           vvv  4 here because the !!/add command will generate 1
         assert_equal(4, @chatter.chats[@chatter.HQroom].length, "Regex match was not posted to HQroom")
         assert(@chatter.chats[@chatter.HQroom][-1].include?(test_reason))
         assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 3 }) #Make sure comment *was* posted to other rooms
     end
+
+    def test_scan_from_db_doesnt_post
+        test_regex = "blargl"
+        test_reason = "blargl_reason"
+        test_body = "I'm a #{test_regex} comment"
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot q #{test_regex} #{test_reason}") 
+        secomment = @client.new_comment("question", test_body)
+        dbcomment = record_comment(secomment, perspective_score: 0)
+
+        @scanner.scan_comment_from_db(dbcomment.id)
+
+        #           vvv  4 here because the !!/add command will generate 1
+        assert_equal(4, @chatter.chats[@chatter.HQroom].length, "Regex match was not posted to HQroom")
+        assert(@chatter.chats[@chatter.HQroom][-1].include?(test_reason))
+        assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 0 }) #Make sure comment wasn't posted to other rooms
+    end
+
 end
