@@ -247,7 +247,7 @@ def bad_command(replier, msg_id, parent_id, room_id, *args)
 end
 
 def cat_mentions(replier, msg_id, room_id, message)
-    return unless ["cat", "kitty", "kitties", "kitten"].any? { |cat_name| message.downcase.include? cat_name }
+    return unless ["cat", "kitty", "kitties", "kitten", "meow", "purr", "feline"].any? { |cat_name| message.downcase.include? cat_name }
 
     cat_response = HTTParty.post("https://aws.random.cat/meow")
     case cat_response.code
