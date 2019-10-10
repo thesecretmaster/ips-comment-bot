@@ -382,7 +382,7 @@ end
 
 def manscan(commander, room_id, bot, *cids)
     return unless commander.matches_bot?(bot)
-    commander.chatter.say("No comments found for id(s) #{cids.join(", ")}", room_id) unless commander.scanner.scan_comments(cids)
+    commander.scanner.scan_comments(cids)
 end
 
 def ttscan(commander, room_id, bot='*')

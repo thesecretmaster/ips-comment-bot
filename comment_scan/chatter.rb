@@ -51,7 +51,8 @@ class Chatter
     end
 
     def add_reply_action(reply, action, args_to_pass=nil)
-        @reply_actions[reply] = [action, args_to_pass]
+        @reply_actions[reply] ||= []
+        @reply_actions[reply] << [action, args_to_pass]
     end
 
     def add_mention_action(action, args_to_pass=nil)
@@ -76,7 +77,9 @@ class Chatter
 
         if @reply_actions.key?(reply_command)
             begin
-                @reply_actions[reply_command][0].call(*@reply_actions[reply_command][1], message.id, message.hash['parent_id'], room_id, *reply_args)
+                @reply_actions[reply_command].each do |action, args_to_pass|
+                    action.call(*args_to_pass, message.id, message.hash['parent_id'], room_id, *reply_args)
+                end
             rescue ArgumentError => e
                 say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
                 puts e

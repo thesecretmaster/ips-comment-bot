@@ -24,6 +24,10 @@ class MockClient
         !@comments.key?(comment_id)
     end
 
+    def comment_with_id(comment_id)
+        @comments[comment_id]
+    end
+
     def comments_after_date(date)
         @comments.select { |id, comment| date.nil? || comment.json["creation_date"] > date }.values
     end

@@ -17,6 +17,7 @@ class Replier
         @mention_actions = []
         @fall_through_actions = []
         @reply_actions = Hash.new()
+        @howgood_actions = Hash.new()
 
         @mention_actions.push(method(:cat_mentions))
 
@@ -31,14 +32,19 @@ class Replier
         @reply_actions["del"] = method(:del)
         @reply_actions["huh?"] = method(:huh)
         @reply_actions["rescan"] = method(:rescan)
+        @reply_actions["report"] = method(:report)
 
-        @reply_actions["tp"] = method(:howgood_tp) #For tp responses to howgood
-        @reply_actions["fp"] = method(:howgood_fp) #For fp responses to howgood
-        @reply_actions["*"] = method(:howgood_glob) #For * responses to howgood
+        @howgood_actions["tp"] = method(:howgood_tp) #For tp responses to howgood
+        @howgood_actions["fp"] = method(:howgood_fp) #For fp responses to howgood
+        @howgood_actions["*"] = method(:howgood_glob) #For * responses to howgood
     end
 
     def setup_reply_actions()
         @reply_actions.each do |command, action|
+            @chatter.add_reply_action(command, action, [self])
+        end
+
+        @howgood_actions.each do |command, action|
             @chatter.add_reply_action(command, action, [self])
         end
     end
@@ -84,6 +90,7 @@ def tp(replier, msg_id, parent_id, room_id, *args)
     comment.tps ||= 0
     comment.tps += 1
     comment.save
+    puts "Room id is: #{room_id}"
     replier.chatter.say "Marked this comment as caught correctly (tp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself.", room_id
 end
 
@@ -127,8 +134,8 @@ def del(replier, msg_id, parent_id, room_id, *args)
     comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
     return if comment.nil?
 
-    MessageCollection::ALL_ROOMS.message_ids_for(comment).each do |msg_id|
-        replier.chatter.delete(msg_id)
+    MessageCollection::ALL_ROOMS.message_ids_for(comment).each do |id|
+        replier.chatter.delete(id)
     end
 end
 
@@ -136,7 +143,7 @@ def huh(replier, msg_id, parent_id, room_id, *args)
     comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
     return if comment.nil?
 
-    matched_regexes = report_raw(comment["post_type"], comment["body_markdown"])
+    matched_regexes = replier.scanner.report_raw(comment["post_type"], comment["body_markdown"])
     # Go through regexes we matched to build reason_text
     reason_text = matched_regexes.map do |regex_match|
         reason = "Matched reason \"#{regex_match.reason.name}\""
@@ -146,8 +153,8 @@ def huh(replier, msg_id, parent_id, room_id, *args)
 
     # If post isn't deleted, check if this was an inactive comment
     if post = replier.seclient.post_exists?(comment.post_id)
-        if timestamp_to_date(post.json["last_activity_date"]) < timestamp_to_date(comment["creation_date"]) - 30
-            reason_text += "Comment was made #{(timestamp_to_date(comment["creation_date"]) - timestamp_to_date(post.json["last_activity_date"])).to_i} days after last activity on post\n"
+        if replier.scanner.timestamp_to_date(post.json["last_activity_date"]) < replier.scanner.timestamp_to_date(comment["creation_date"]) - 30
+            reason_text += "Comment was made #{(replier.scanner.timestamp_to_date(comment["creation_date"]) - replier.scanner.timestamp_to_date(post.json["last_activity_date"])).to_i} days after last activity on post\n"
         end
     end
 
@@ -160,11 +167,21 @@ def rescan(replier, msg_id, parent_id, room_id, *args)
     db_comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
     return if db_comment.nil?
 
-    se_comment = replier.seclient.comment_with_id(db_comment["comment_id"])
-    if se_comment.nil?
+    if replier.seclient.comment_deleted?(db_comment["comment_id"])
         replier.chatter.say("Comment with id #{db_comment["comment_id"]} was deleted and cannot be rescanned.", room_id)
     else
-        replier.scanner.scan_se_comment(se_comment)
+        replier.scanner.scan_comments(db_comment["comment_id"])
+    end
+end
+
+def report(replier, msg_id, parent_id, room_id, *report_reason)
+    db_comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
+    return if db_comment.nil?
+
+    if replier.seclient.comment_deleted?(db_comment["comment_id"])
+        replier.chatter.say("Comment with id #{db_comment["comment_id"]} was deleted and cannot be reported.", room_id)
+    else
+        replier.scanner.custom_report(db_comment, "Reported with custom reason: #{report_reason.join(' ')}")
     end
 end
 

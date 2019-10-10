@@ -57,7 +57,11 @@ class CommentScanner
     def scan_comments(*comment_ids)
         comment_ids.flatten.each do |comment_id|
             comment = seclient.comment_with_id(comment_id)
-            next if comment.nil? #Didn't actually scan
+
+            if comment.nil? #Didn't actually scan
+                @chatter.say("**BAD ID:** No comment exists for id: #{comment_id} (it may have been deleted)")
+                return nil
+            end
 
             scan_se_comment(comment)#, should_post_matches)
         end
@@ -86,7 +90,11 @@ class CommentScanner
         comments.flatten.each { |comment| report_db_comment(comment, should_post_matches: should_post_matches) }
     end
 
-    def report_db_comment(comment, should_post_matches: true)
+    def custom_report(dbcomment, custom_reason)
+        report_db_comment(dbcomment, custom_report: true, custom_text: custom_reason)
+    end
+
+    def report_db_comment(comment, should_post_matches: true, custom_report: false, custom_text: "")
         user = User.where(id: comment["owner_id"])
         user = user.any? ? user.first : false # if user was deleted, set it to false for easy checking
 
@@ -141,7 +149,7 @@ class CommentScanner
 
         puts "Check reasons..."
 
-        report_text = report(comment["post_type"], comment["body_markdown"])
+        report_text = custom_report ? custom_text : report(comment["post_type"], comment["body_markdown"])
         reasons = report_raw(comment["post_type"], comment["body_markdown"]).map(&:reason)
 
         if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
@@ -166,14 +174,15 @@ class CommentScanner
             room = Room.find_by(room_id: room_id)
             next unless (!room.nil? && room.on)
 
-            should_post_message = (
-                                    # (room.magic_comment && has_magic_comment?(comment, post)) ||
-                                    (room.regex_match && report_text) ||
-                                    toxicity >= 0.7 || # I should add a room property for this
-                                    post_inactive # And this
-                                  ) && should_post_matches && user &&
-                                  post && !@ignore_users.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
-                                  (user['user_type'] != 'moderator')
+            should_post_message = ((
+                                        # (room.magic_comment && has_magic_comment?(comment, post)) ||
+                                        (room.regex_match && report_text) ||
+                                        toxicity >= 0.7 || # I should add a room property for this
+                                        post_inactive # And this
+                                    ) && should_post_matches && user &&
+                                      post && !@ignore_users.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
+                                      (user['user_type'] != 'moderator')
+                                  ) || custom_report
 
             if should_post_message
                 msgs.push comment, @chatter.say(comment_text_to_post, room_id)
