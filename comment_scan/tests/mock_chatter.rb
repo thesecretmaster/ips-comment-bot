@@ -37,8 +37,10 @@ class MockChatter
 
         begin
             @command_actions[room_id][prefix][0].call(*@command_actions[room_id][prefix][1], room_id, *args) if @command_actions[room_id].key?(prefix)
+            #puts "Called #{prefix} logic on #{@command_actions[room_id][prefix][0]}" if @command_actions[room_id].key?(prefix)
+            #puts "Called with (#{@command_actions[room_id][prefix][1].join(', ')}, #{room_id}, #{args.join(', ')})" if @command_actions[room_id].key?(prefix)
         rescue ArgumentError => e
-            say("Invalid number of arguments for '#{prefix}' command.", message.hash['room_id'])
+            say("Invalid number of arguments for '#{prefix}' command.", room_id)
             #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_command_action?
         end
     end

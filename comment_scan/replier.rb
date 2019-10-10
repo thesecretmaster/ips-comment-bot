@@ -29,7 +29,7 @@ class Replier
         @reply_actions["rude"] = method(:rude)
         @reply_actions["dbid"] = method(:dbid)
         @reply_actions["feedbacks"] = method(:feedbacks)
-        @reply_actions["del"] = method(:del)
+        @reply_actions["del"] = method(:del_reply)
         @reply_actions["huh?"] = method(:huh)
         @reply_actions["rescan"] = method(:rescan)
         @reply_actions["report"] = method(:report)
@@ -90,7 +90,7 @@ def tp(replier, msg_id, parent_id, room_id, *args)
     comment.tps ||= 0
     comment.tps += 1
     comment.save
-    puts "Room id is: #{room_id}"
+
     replier.chatter.say "Marked this comment as caught correctly (tp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself.", room_id
 end
 
@@ -130,7 +130,7 @@ def feedbacks(replier, msg_id, parent_id, room_id, *args)
     replier.chatter.say("Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps", room_id)
 end
 
-def del(replier, msg_id, parent_id, room_id, *args)
+def del_reply(replier, msg_id, parent_id, room_id, *args)
     comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
     return if comment.nil?
 
