@@ -86,7 +86,6 @@ class  ReplierTest < Test::Unit::TestCase
         @chatter.simulate_message(@chatter.HQroom, "!!/add #{@bot_names[0]} q comment because_reasons") #ensure it'll be printed in all rooms
         secomment = @client.new_comment("question", "I'm a new comment!")
         @scanner.scan_new_comments
-        puts @chatter.chats
 
         dbcomment = MessageCollection::ALL_ROOMS.comment_for(0) #grab that comment
         tps_before = dbcomment.tps.to_i
@@ -95,8 +94,6 @@ class  ReplierTest < Test::Unit::TestCase
 
         @chatter.simulate_reply(@chatter.rooms[0], 0, "tp")
         @chatter.simulate_reply(@chatter.HQroom, 0, "feedbacks")
-
-        puts @chatter.chats
 
         assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before + 1}tps/#{fps_before}fps")
         assert_equal(tps_before + 1, dbcomment.tps.to_i, "Comment not updated in db correctly")
@@ -114,7 +111,25 @@ class  ReplierTest < Test::Unit::TestCase
         #One extra here for adding the regex
         assert_equal(7, @chatter.chats[@chatter.HQroom].length, "Incorrect number of comments posted to HQ")
         @chatter.rooms.each do |room_id|
-            assert_equal(6, @chatter.chats[room_id].length, "Incorrect number of comments posted to HQ")
+            assert_equal(6, @chatter.chats[room_id].length, "Incorrect number of comments posted to child room")
+        end
+    end
+
+    def test_custom_report
+        secomment = @client.new_comment("question", "I'm a new comment!")
+        @scanner.scan_new_comments
+        custom_reason = "testing things"
+
+        @chatter.simulate_reply(@chatter.HQroom, 0, "report #{custom_reason}")
+
+        #Two extra here for the initial report
+        assert_equal(5, @chatter.chats[@chatter.HQroom].length, "Incorrect number of comments posted to HQ")
+        @chatter.rooms.each do |room_id|
+            assert_equal(3, @chatter.chats[room_id].length, "Incorrect number of comments posted to child room")
+        end
+
+        (@chatter.rooms + [@chatter.HQroom]).each do |room_id|
+            assert(@chatter.chats[room_id][-1].include? custom_reason)
         end
     end
 
