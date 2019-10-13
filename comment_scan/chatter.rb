@@ -28,6 +28,7 @@ class Chatter
         @mention_actions = [] 
         @fall_through_actions = [] 
 
+        #TODO: mention_received logic will be run alongside both command and reply logic. Going to need to fix this at some point
         (@rooms + [@HQroom]).each do |room_id|
             @command_actions[room_id] = Hash.new()
 
