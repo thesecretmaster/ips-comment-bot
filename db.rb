@@ -14,6 +14,7 @@ def wipe_db
   Reason.delete_all
   Room.delete_all
   WhitelistedUser.delete_all
+  NoticedUser.delete_all
 end
 
 def record_comment(comment, perspective_score:)
@@ -82,4 +83,7 @@ class Room < ActiveRecord::Base
 end
 
 class WhitelistedUser < ActiveRecord::Base
+end
+
+class NoticedUser < ActiveRecord::Base
 end

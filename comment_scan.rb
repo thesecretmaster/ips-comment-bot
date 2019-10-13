@@ -17,6 +17,7 @@ setup_db("db/db.sqlite3")
 settings = File.exists?('./settings.yml') ? YAML.load_file('./settings.yml') : ENV
 bot_names = settings['names'] || Array(settings['name'])
 ignore_users = Array(settings['ignore_user_ids'] || WhitelistedUser.all.map(&:user_id))
+notice_list = NoticedUser.all.map(&:user_id)
 
 #setup Rooms in DB
 settings['rooms'].each do |room_id|
@@ -25,7 +26,7 @@ end
 
 chatter = Chatter.new(settings["ChatXUsername"], settings["ChatXPassword"], settings["hq_room_id"].to_i, settings["rooms"])
 seclient = SEClient.new(settings["APIKey"], settings["site"])
-scanner = CommentScanner.new(seclient, chatter, settings["all_comments"], ignore_users, perspective_key: settings['perspective_key'], perspective_log: Logger.new('perspective.log'))
+scanner = CommentScanner.new(seclient, chatter, settings["all_comments"], ignore_users, notice_list, perspective_key: settings['perspective_key'], perspective_log: Logger.new('perspective.log'))
 commander = Commander.new(chatter, seclient, scanner, bot_names)
 replier = Replier.new(chatter, seclient, scanner, bot_names)
 

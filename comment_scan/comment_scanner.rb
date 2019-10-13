@@ -4,11 +4,12 @@ require_relative 'message_collection'
 class CommentScanner
     attr_reader :seclient, :chatter, :time_to_scan
 
-    def initialize(seclient, chatter, post_all_comments, ignore_users, perspective_key: '', perspective_log: Logger.new('/dev/null'))
+    def initialize(seclient, chatter, post_all_comments, ignore_users, notice_users, perspective_key: '', perspective_log: Logger.new('/dev/null'))
         @seclient = seclient
         @chatter = chatter
         @post_all_comments = post_all_comments
         @ignore_users = ignore_users
+        @notice_users = notice_users
         @perspective_key = perspective_key
         @perspective_log = perspective_log
 
@@ -132,11 +133,16 @@ class CommentScanner
         # toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
         toxicity = comment["perspective_score"].to_f
 
+        puts "Noticed users are: #{@noticed_users}"
+        puts "Current user is: #{user.user_id}"
+        watched_user = @notice_users.include? user.user_id
+
         puts "Building message..."
         msg += " | Toxicity #{toxicity}"
         # msg += " | Has magic comment" if !post_exists?(cli, comment["post_id"]) and has_magic_comment? comment, post
         msg += " | High toxicity" if toxicity >= 0.7
         msg += " | Comment on inactive post" if post_inactive
+        msg += " | Comment made by watched user" if watched_user
         msg += " | tps/fps: #{comment["tps"].to_i}/#{comment["fps"].to_i}"
 
         puts "Building comment body..."
@@ -178,7 +184,8 @@ class CommentScanner
                                         # (room.magic_comment && has_magic_comment?(comment, post)) ||
                                         (room.regex_match && report_text) ||
                                         toxicity >= 0.7 || # I should add a room property for this
-                                        post_inactive # And this
+                                        post_inactive || # And this
+                                        watched_user
                                     ) && should_post_matches && user &&
                                       post && !@ignore_users.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
                                       (user['user_type'] != 'moderator')

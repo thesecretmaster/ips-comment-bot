@@ -82,5 +82,6 @@ ActiveRecord::Base.logger = nil
 namespace :db do
   task :load_config do
     require "./db"
+    setup_db("db/db.sqlite3")
   end
 end

@@ -25,6 +25,9 @@ class Commander
         @HQ_commands["!!/whitelist"] = method(:whitelistuser)
         @HQ_commands["!!/unwhitelist"] = method(:unwhitelistuser)
         @HQ_commands["!!/whitelisted"] = method(:whitelisted)
+        @HQ_commands["!!/notice"] = method(:noticeuser)
+        @HQ_commands["!!/unnotice"] = method(:unnoticeuser)
+        @HQ_commands["!!/noticed"] = method(:noticedusers)
         @HQ_commands["!!/quota"] = method(:quota)
         @HQ_commands["!!/uptime"] = method(:uptime)
         @HQ_commands["!!/logsize"] = method(:logsize)
@@ -200,6 +203,23 @@ end
 def whitelisted(commander, room_id, bot='*')
     return unless commander.matches_bot?(bot)
     commander.chatter.say("Current whitelist: #{WhitelistedUser.all.map(&:user_id).join(', ')}", room_id)
+end
+
+def noticeuser(commander, room_id, bot, *uids)
+    return unless commander.matches_bot?(bot)
+    uids.each { |uid| NoticedUser.create(user_id: uid) }
+    commander.chatter.say("Added user(s) #{uids.join(', ')} to the Notice list. Please restart the bot for this to take effect.", room_id)
+end
+
+def unnoticeuser(commander, room_id, bot, *uids)
+    return unless commander.matches_bot?(bot)
+    uids.each { |uid| NoticedUser.where(user_id: uid).destroy_all }
+    commander.chatter.say("Removed user(s) #{uids.join(', ')} from the Notice list. Please restart the bot for this to take effect.", room_id)
+end
+
+def noticedusers(commander, room_id, bot='*')
+    return unless commander.matches_bot?(bot)
+    commander.chatter.say("Current Notice list: #{NoticedUser.all.map(&:user_id).join(', ')}", room_id)
 end
 
 def quota(commander, room_id, bot='*')
