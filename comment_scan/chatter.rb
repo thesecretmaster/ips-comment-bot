@@ -16,7 +16,7 @@ class Chatter
         @chatbot.join_room @HQroom
         @chatbot.join_rooms @rooms # THIS IS THE PROBLEM
 
-        @reply_actions = {}
+        @reply_actions = Hash.new { |hash, key| hash[key] = [] } #Automagically create an array for each new key
         @command_actions = {}
         @mention_actions = [] 
         @fall_through_actions = [] 
@@ -45,7 +45,6 @@ class Chatter
     end
 
     def add_reply_action(reply, action, args_to_pass=nil)
-        @reply_actions[reply] ||= []
         @reply_actions[reply] << [action, args_to_pass]
     end
 
