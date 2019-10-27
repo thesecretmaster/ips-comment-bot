@@ -13,15 +13,17 @@ class  ReplierTest < Test::Unit::TestCase
         setup_db("db/test_db.sqlite3")
         wipe_db
 
+        @logger = Logger.new(STDOUT, level: Logger::ERROR, formatter: proc { |severity, datetime, progname, msg| "#{msg}\n" })
+
         @bot_names = ['testbot', '@testbot']
 
         #Setup chatter/commander
-        @chatter = MockChatter.new(1)
-        @client = MockClient.new
+        @chatter = MockChatter.new(1, @logger)
+        @client = MockClient.new(@logger)
 
-        @scanner = CommentScanner.new(@client, @chatter, true, [])
-        @commander = Commander.new(@chatter, nil, nil, @bot_names)
-        @replier = Replier.new(@chatter, @client, @scanner, @bot_names)
+        @scanner = CommentScanner.new(@client, @chatter, true, [], @logger)
+        @commander = Commander.new(@chatter, nil, nil, @bot_names, @logger)
+        @replier = Replier.new(@chatter, @client, @scanner, @bot_names, @logger)
 
         @commander.setup_HQ_commands #don't really care about basics here
         @replier.setup_reply_actions

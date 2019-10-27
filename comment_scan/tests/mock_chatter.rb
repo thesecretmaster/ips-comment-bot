@@ -3,7 +3,8 @@ require './db'
 class MockChatter
     attr_reader :HQroom, :rooms, :chats
 
-    def initialize(num_child_rooms)
+    def initialize(num_child_rooms, logger)
+        @logger = logger
         @HQroom = 0
         @rooms = [*1..num_child_rooms.to_i].map { |x| (x+100) }
 
@@ -38,8 +39,8 @@ class MockChatter
 
         begin
             @command_actions[room_id][prefix][0].call(*@command_actions[room_id][prefix][1], room_id, *args) if @command_actions[room_id].key?(prefix)
-            #puts "Called #{prefix} logic on #{@command_actions[room_id][prefix][0]}" if @command_actions[room_id].key?(prefix)
-            #puts "Called with (#{@command_actions[room_id][prefix][1].join(', ')}, #{room_id}, #{args.join(', ')})" if @command_actions[room_id].key?(prefix)
+            @logger.debug "Called #{prefix} logic on #{@command_actions[room_id][prefix][0]}" if @command_actions[room_id].key?(prefix)
+            @logger.debug "Called with (#{@command_actions[room_id][prefix][1].join(', ')}, #{room_id}, #{args.join(', ')})" if @command_actions[room_id].key?(prefix)
         rescue ArgumentError => e
             say("Invalid number of arguments for '#{prefix}' command.", room_id)
             #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_command_action?
@@ -54,10 +55,10 @@ class MockChatter
         reply_command = reply_args[0]
         reply_args = reply_args.drop(1) #drop the command
 
-        puts "Got reply with command: #{reply_command}"
-        puts "Does it exist? #{@reply_actions.key?(reply_command)}"
+        @logger.debug "Got reply with command: #{reply_command}"
+        @logger.debug "Does it exist? #{@reply_actions.key?(reply_command)}"
         if @reply_actions.key?(reply_command)
-            puts @reply_actions[reply_command]
+            @logger.debug @reply_actions[reply_command]
             begin
                 @reply_actions[reply_command].each do |action, args_to_pass|
                     #                         vvvvv Pass fake message id (only used for replies)
@@ -65,7 +66,7 @@ class MockChatter
                 end
             rescue ArgumentError => e
                 say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
-                puts e
+                @logger.warn e
                 #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_command_action?
             rescue Exception => e
                 say("Got exception ```#{e}``` processing your response", room_id)

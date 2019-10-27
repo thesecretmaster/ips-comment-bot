@@ -3,7 +3,8 @@ require 'date'
 class MockClient
     attr_reader :posts
 
-    def initialize
+    def initialize(logger)
+        @logger = logger
         @comments = {}
         @posts = {}
         @users = {}

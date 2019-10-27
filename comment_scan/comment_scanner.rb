@@ -4,11 +4,12 @@ require_relative 'message_collection'
 class CommentScanner
     attr_reader :seclient, :chatter, :time_to_scan
 
-    def initialize(seclient, chatter, post_all_comments, ignore_users, perspective_key: '', perspective_log: Logger.new('/dev/null'))
+    def initialize(seclient, chatter, post_all_comments, ignore_users, logger, perspective_key: '', perspective_log: Logger.new('/dev/null'))
         @seclient = seclient
         @chatter = chatter
         @post_all_comments = post_all_comments
         @ignore_users = ignore_users
+        @logger = logger
         @perspective_key = perspective_key
         @perspective_log = perspective_log
 
@@ -70,7 +71,7 @@ class CommentScanner
         body = comment.body_markdown
         toxicity = perspective_scan(body).to_f
 
-        if dbcomment = record_comment(comment, perspective_score: toxicity)
+        if dbcomment = Comment.record_comment(comment, @logger, perspective_score: toxicity)
             report_db_comments(dbcomment, should_post_matches: true)
         end
     end
@@ -96,7 +97,7 @@ class CommentScanner
         user = User.where(id: comment["owner_id"])
         user = user.any? ? user.first : false # if user was deleted, set it to false for easy checking
 
-        puts "Grab metadata..."
+        @logger.debug "Grab metadata..."
 
         author = user ? user.display_name : "(removed)"
         author_link = user ? "[#{author}](#{user.link})" : "(removed)"
@@ -104,11 +105,11 @@ class CommentScanner
 
         #ts = ts_for(comment["creation_date"]
 
-        puts "Grab post data/build message to post..."
+        @logger.debug "Grab post data/build message to post..."
 
         msg = "##{comment["post_id"]} #{author_link} (#{rep})"
 
-        puts "Analyzing post..."
+        @logger.debug "Analyzing post..."
 
         post_inactive = false # Default to false in case we can't access post
         post = [] # so that we can use this later for whitelisted users
@@ -130,14 +131,14 @@ class CommentScanner
         # toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
         toxicity = comment["perspective_score"].to_f
 
-        puts "Building message..."
+        @logger.debug "Building message..."
         msg += " | Toxicity #{toxicity}"
         # msg += " | Has magic comment" if !post_exists?(cli, comment["post_id"]) and has_magic_comment? comment, post
         msg += " | High toxicity" if toxicity >= 0.7
         msg += " | Comment on inactive post" if post_inactive
         msg += " | tps/fps: #{comment["tps"].to_i}/#{comment["fps"].to_i}"
 
-        puts "Building comment body..."
+        @logger.debug "Building comment body..."
 
         # If the comment exists, we can just post the link and ChatX will do the rest
         # Else, make a quote manually with just the body (no need to be fancy, this must be old)
@@ -145,7 +146,7 @@ class CommentScanner
         # TODO: Chat API is truncating to 500 characters right now even though we're good to post more. Fix this.
         comment_text_to_post = @seclient.comment_deleted?(comment["comment_id"]) ? ("\n> " + comment["body"]) : comment["link"]
 
-        puts "Check reasons..."
+        @logger.debug "Check reasons..."
 
         report_text = custom_report ? custom_text : report(comment["post_type"], comment["body_markdown"])
         reasons = report_raw(comment["post_type"], comment["body_markdown"]).map(&:reason)
@@ -156,7 +157,7 @@ class CommentScanner
 
         msgs = MessageCollection::ALL_ROOMS
 
-        puts "Post chat message..."
+        @logger.debug "Post chat message..."
 
         if @post_all_comments
             msgs.push comment, @chatter.say(comment_text_to_post)
@@ -240,7 +241,7 @@ class CommentScanner
     def perspective_scan(text)
         return 'NoKey' unless @perspecitve_key
 
-        puts "Perspective scan..."
+        @logger.debug "Perspective scan..."
         response = HTTParty.post("https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=#{@perspective_key}",
         :body => {
             "comment" => {

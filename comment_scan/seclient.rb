@@ -1,7 +1,8 @@
 require 'se/api'
 
 class SEClient
-    def initialize(apiKey, site)
+    def initialize(apiKey, site, logger)
+        @logger = logger
         @site = site
         @client = SE::API::Client.new(apiKey, site: site)
     end

@@ -4,17 +4,10 @@ require "htmlentities"
 class Chatter
     attr_reader :HQroom, :rooms
 
-    def initialize(chatXuser, chatXpwd, hqroom, *rooms)
-        if ENV['SHORT_LOGS']
-          $stdout.sync = true #Do we really need this??
-          log_formatter = proc do |severity, datetime, progname, msg|
-            "#{msg}\n"
-          end
-        else
-          log_formatter = nil
-        end
+    def initialize(chatXuser, chatXpwd, hqroom, logger, *rooms)
+        @logger = logger
 
-        @chatbot = ChatBot.new(chatXuser, chatXpwd, log_location: STDOUT, log_formatter: log_formatter)
+        @chatbot = ChatBot.new(chatXuser, chatXpwd, log_location: STDOUT, log_formatter: @logger.formatter)
         @HQroom = hqroom.to_i
         @rooms = rooms - [@HQroom] #Don't include HQ room in rooms
 
@@ -85,7 +78,7 @@ class Chatter
                 end
             rescue ArgumentError => e
                 say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
-                puts e
+                @logger.warn e
                 #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_command_action?
             rescue Exception => e
                 say("Got exception ```#{e}``` processing your response", room_id)
@@ -105,7 +98,7 @@ class Chatter
             @command_actions[room_id][prefix][0].call(*@command_actions[room_id][prefix][1], room_id, *args) if @command_actions[room_id].key?(prefix)
         rescue ArgumentError => e
             say("Invalid number of arguments for '#{prefix}' command.", room_id)
-            puts e
+            @logger.warn e
             #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_command_action?
         rescue Exception => e
             say("Got exception ```#{e}``` processing your command", room_id)

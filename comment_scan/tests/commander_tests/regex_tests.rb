@@ -9,10 +9,12 @@ class  RegexTest < Test::Unit::TestCase
         setup_db("db/test_db.sqlite3")
         wipe_db
 
+        @logger = Logger.new(STDOUT, level: Logger::ERROR, formatter: proc { |severity, datetime, progname, msg| "#{msg}\n" })
+
         #Setup chatter/commander
-        @chatter = MockChatter.new(1)
+        @chatter = MockChatter.new(1, @logger)
         #Client and scanner won't be used for these tests, so pass nil's (for now)
-        @commander = Commander.new(@chatter, nil, nil, ['testbot', '@testbot'])
+        @commander = Commander.new(@chatter, nil, nil, ['testbot', '@testbot'], @logger)
 
         @commander.setup_basic_commands
         @commander.setup_HQ_commands

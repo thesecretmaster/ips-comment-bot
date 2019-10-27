@@ -5,11 +5,12 @@ require 'htmlentities'
 class Replier
     attr_reader :chatter, :scanner, :seclient, :BOT_NAMES
 
-    def initialize(chatter, seclient, scanner, bot_names)
+    def initialize(chatter, seclient, scanner, bot_names, logger)
         @chatter = chatter
         @scanner = scanner
         @seclient = seclient
         @BOT_NAMES = bot_names
+        @logger = logger
 
         @mc_replies = {}
         @hg_replies = {}
@@ -277,7 +278,7 @@ def bad_command(replier, msg_id, parent_id, room_id, *args)
     elsif !hg_comment.nil?
         replier.chatter.say("Invalid comment type. Reply to howgood with <comment_type> <num> to print num matches of comment_type where comment types are tp, fp, and *", room_id)
     else
-        puts "That was not a report"
+        @logger.debug "That was not a report"
         # replier.chatter.say("That was not a report", room_id)
     end
 end

@@ -4,11 +4,12 @@ require './db'
 class Commander
     attr_reader :chatter, :seclient, :scanner, :BOT_NAMES, :start_time
 
-    def initialize(chatter, seclient, scanner, bot_names)
+    def initialize(chatter, seclient, scanner, bot_names, logger)
         @chatter = chatter
         @seclient = seclient
         @scanner = scanner
         @BOT_NAMES = bot_names
+        @logger = logger
 
         @basic_commands = {}
         @HQ_commands = {}
@@ -64,7 +65,7 @@ class Commander
     end
 
     def matches_bot?(botname)
-        puts "Checking if #{botname} matches #{@BOT_NAMES}"
+        @logger.debug "Checking if #{botname} matches #{@BOT_NAMES}"
         botname.nil? || botname == '*' || @BOT_NAMES.include?(botname.downcase)
     end
 
@@ -249,7 +250,7 @@ end
 
 def howgood(commander, room_id, bot, type, regex)
     return unless commander.matches_bot?(bot)
-    puts type
+
     type = 'question' if type == 'q'
     type = 'answer' if type == 'a'
     unless ["question", "answer", "*"].include? type
