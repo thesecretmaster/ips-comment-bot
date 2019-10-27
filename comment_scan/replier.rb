@@ -189,7 +189,7 @@ class Replier
         hg_comment = MessageCollection::ALL_ROOMS.howgood_for(parent_id.to_i)
         return if hg_comment.nil?
 
-        if !/\A\d+\z/.match(num_to_display) || num_to_display.to_i < 1
+        if num_to_display.to_i.to_s != num_to_display || num_to_display.to_i < 1
             @chatter.say("Bad number. Reply to howgood with <comment_type> <num> to print num matches of comment_type where comment types are tp, fp, and *", room_id)
             return
         end
@@ -207,14 +207,16 @@ class Replier
         @chatter.say("There are no tp's on that howgood.", room_id) if comments_to_display.count == 0
 
         #no need to return and prevent this from runnng. It won't do anything if db_comments is empty anyways
-        comments_to_display.take(num_to_display).each { |comment| @scanner.report_db_comment(comment, should_post_matches: false) }
+        comments_to_display.take(num_to_display).each do |comment|
+            @scanner.report_db_comment(comment, should_post_matches: false)
+        end
     end
 
     def howgood_fp(msg_id, parent_id, room_id, num_to_display=3)
         hg_comment = MessageCollection::ALL_ROOMS.howgood_for(parent_id.to_i)
         return if hg_comment.nil?
 
-        if !/\A\d+\z/.match(num_to_display) || num_to_display.to_i < 1
+        if num_to_display.to_i.to_s != num_to_display || num_to_display.to_i < 1
             @chatter.say("Bad number. Reply to howgood with <comment_type> <num> to print num matches of comment_type where comment types are tp, fp, and *", room_id)
             return
         end
@@ -232,14 +234,16 @@ class Replier
         @chatter.say("There are no fp's on that howgood.", room_id) if comments_to_display.count == 0
 
         #no need to return and prevent this from runnng. It won't do anything if db_comments is empty anyways
-        comments_to_display.take(num_to_display).each { |comment| @scanner.report_db_comment(comment, should_post_matches: false) }
+        comments_to_display.take(num_to_display).each do |comment|
+            @scanner.report_db_comment(comment, should_post_matches: false)
+        end
     end
 
     def howgood_glob(msg_id, parent_id, room_id, num_to_display=3)
         hg_comment = MessageCollection::ALL_ROOMS.howgood_for(parent_id.to_i)
         return if hg_comment.nil?
 
-        if !/\A\d+\z/.match(num_to_display) || num_to_display.to_i < 1
+        if num_to_display.to_i.to_s != num_to_display || num_to_display.to_i < 1
             @chatter.say("Bad number. Reply to howgood with <comment_type> <num> to print num matches of comment_type where comment types are tp, fp, and *", room_id)
             return
         end
@@ -257,7 +261,9 @@ class Replier
         @chatter.say("There are no comments on that howgood.", room_id) if comments_to_display.count == 0
 
         #no need to return and prevent this from runnng. It won't do anything if db_comments is empty anyways
-        comments_to_display.take(num_to_display).each { |comment| @scanner.report_db_comment(comment, should_post_matches: false) }
+        comments_to_display.take(num_to_display).each do |comment|
+            @scanner.report_db_comment(comment, should_post_matches: false)
+        end
     end
 
     #TODO: Add a "none" option for howgood at some point. Would work by checking that tps/fps = nil
