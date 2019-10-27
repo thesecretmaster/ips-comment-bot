@@ -10,8 +10,8 @@ class Commander
         @scanner = scanner
         @BOT_NAMES = bot_names
 
-        @basic_commands = Hash.new()
-        @HQ_commands = Hash.new()
+        @basic_commands = {}
+        @HQ_commands = {}
 
         @basic_commands["!!/whoami"] = method(:whoami)
         @basic_commands["!!/alive"] = method(:alive)
@@ -48,7 +48,7 @@ class Commander
         @start_time = Time.now
     end
 
-    def setup_basic_commands()
+    def setup_basic_commands
         #For each room, add each basic command
         (@chatter.rooms + [@chatter.HQroom]).each do |room_id|
             @basic_commands.each do |command, action|
@@ -57,7 +57,7 @@ class Commander
         end
     end
 
-    def setup_HQ_commands()
+    def setup_HQ_commands
         @HQ_commands.each do |command, action|
             @chatter.add_command_action(@chatter.HQroom, command, action, [self])
         end
@@ -73,7 +73,7 @@ class Commander
     end
 
     def on?(room_id)
-        isHQ?(room_id) || Room.on?(room_id)
+        isHQ?(room_id) || Room.find_by(room_id: room_id).on?
     end
 
     def restart_bot(num_to_post, bundle)
@@ -123,21 +123,21 @@ end
 
 def on(commander, room_id, bot='*')
     return unless commander.matches_bot?(bot)
-    if Room.on?(room_id)
+    if Room.find_by(roome_id: room_id).on?
         commander.chatter.say("I'm already on, silly", room_id)
     else
         commander.chatter.say("Turning on...", room_id)
-        Room.turn_on(room_id)
+        Room.find_by(room_id: room_id).turn_on
     end
 end
 
 def off(commander, room_id, bot='*')
     return unless commander.matches_bot?(bot)
-    if !Room.on?(room_id)
+    if !Room.find_by(room_id: room_id).on?
         commander.chatter.say("I'm already off, silly", room_id)
     else
         commander.chatter.say("Turning off...", room_id)
-        Room.turn_off(room_id)
+        Room.find_by(room_id: room_id).turn_off
     end
 end
 

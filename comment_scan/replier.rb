@@ -11,13 +11,13 @@ class Replier
         @seclient = seclient
         @BOT_NAMES = bot_names
 
-        @mc_replies = Hash.new()
-        @hg_replies = Hash.new()
+        @mc_replies = {}
+        @hg_replies = {}
 
         @mention_actions = []
         @fall_through_actions = []
-        @reply_actions = Hash.new()
-        @howgood_actions = Hash.new()
+        @reply_actions = {}
+        @howgood_actions = {}
 
         @mention_actions.push(method(:cat_mentions))
 
@@ -39,7 +39,7 @@ class Replier
         @howgood_actions["*"] = method(:howgood_glob) #For * responses to howgood
     end
 
-    def setup_reply_actions()
+    def setup_reply_actions
         @reply_actions.each do |command, action|
             @chatter.add_reply_action(command, action, [self])
         end
@@ -49,13 +49,13 @@ class Replier
         end
     end
 
-    def setup_mention_actions()
+    def setup_mention_actions
         @mention_actions.each do |action|
             @chatter.add_mention_action(action, [self])
         end
     end
 
-    def setup_fall_through_actions()
+    def setup_fall_through_actions
         @fall_through_actions.each do |action|
             @chatter.add_fall_through_reply_action(action, [self])
         end
@@ -66,7 +66,7 @@ class Replier
         db_comments.take(num_to_display).each { |comment| @scanner.repot_db_comment(comment, should_post_matches: true) }
     end
 
-    def random_response()
+    def random_response
       responses = ["Ain't that the truth.",
                    "You're telling me.",
                    "Yep. That's about the size of it.",
@@ -75,24 +75,25 @@ class Replier
                    "For real?",
                    "Humans, amirite?"]
 
-      return responses[rand(responses.length())]
+      return responses[rand(responses.length)]
     end
 
     def contains_cat(message)
         ["cat", "kitty", "kitties", "kitten", "meow", "purr", "feline"].any? { |cat_name| message.downcase.include? cat_name }
     end
+
+    def tp(replier, msg_id, parent_id, room_id, *args)
+        comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
+        return if comment.nil?
+
+        comment.tps ||= 0
+        comment.tps += 1
+        comment.save
+
+        replier.chatter.say "Marked this comment as caught correctly (tp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself.", room_id
+    end
 end
 
-def tp(replier, msg_id, parent_id, room_id, *args)
-    comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
-    return if comment.nil?
-
-    comment.tps ||= 0
-    comment.tps += 1
-    comment.save
-
-    replier.chatter.say "Marked this comment as caught correctly (tp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself.", room_id
-end
 
 def fp(replier, msg_id, parent_id, room_id, *args)
     comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
@@ -269,7 +270,7 @@ def bad_command(replier, msg_id, parent_id, room_id, *args)
     if !db_comment.nil?
         if args.length > 0 #They're not trying to give a command
             #Maybe make conversation back (33% chance)
-            replier.chatter.say(":#{msg_id} #{replier.random_response}", room_id) if rand() > 0.67
+            replier.chatter.say(":#{msg_id} #{replier.random_response}", room_id) if rand > 0.67
         else
             replier.chatter.say("Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id)
         end

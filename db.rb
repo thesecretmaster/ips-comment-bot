@@ -1,4 +1,5 @@
 require "active_record"
+require "htmlentities"
 
 def setup_db(db_location)
   ActiveRecord::Base.establish_connection(
@@ -68,16 +69,16 @@ class Reason < ActiveRecord::Base
 end
 
 class Room < ActiveRecord::Base
-  def self.on?(room_id)
-    find_by(room_id: room_id).on
+  def on?
+    self.on
   end
 
-  def self.turn_on(room_id)
-    find_by(room_id: room_id).update(on: true)
+  def turn_on
+    self.on = true
   end
 
-  def self.turn_off(room_id)
-    find_by(room_id: room_id).update(on: false)
+  def turn_off
+    self.on = false
   end
 end
 

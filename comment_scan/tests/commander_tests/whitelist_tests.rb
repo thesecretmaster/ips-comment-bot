@@ -14,8 +14,8 @@ class WhitelistTest < Test::Unit::TestCase
         #Client and scanner won't be used for these tests, so pass nil's
         @commander = Commander.new(@chatter, nil, nil, ['testbot', '@testbot'])
 
-        @commander.setup_basic_commands()
-        @commander.setup_HQ_commands()
+        @commander.setup_basic_commands
+        @commander.setup_HQ_commands
     end
 
     def teardown

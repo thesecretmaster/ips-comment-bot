@@ -14,12 +14,12 @@ class ScannerTest < Test::Unit::TestCase
 
         #Setup chatter/commander
         @chatter = MockChatter.new(1)
-        @client = MockClient.new()
+        @client = MockClient.new
 
         @scanner = CommentScanner.new(@client, @chatter, true, [])
-        @commander = Commander.new(@chatter, nil, nil, ['testbot', '@testbot'])
+        @commander = Commander.new(@chatter, @client, @scanner, ['testbot', '@testbot'])
 
-        @commander.setup_HQ_commands() #don't really care about basics here
+        @commander.setup_HQ_commands #don't really care about basics here
     end
 
     def teardown

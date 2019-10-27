@@ -30,28 +30,21 @@ class CommentScanner
         end
         return true
     end
-    #def scan_comment(comment_id, should_post_matches: true)
-    #    #Does the work of 
-    #    comment = seclient.comment_with_id(comment_id)
-    #    return false if comment == nil #Didn't actually scan
-    #
-    #    report_comment(comment, should_post_matches: should_post_matches)
-    #end
 
     def scan_comments_from_db(*comment_ids)
-        comment_ids.flatten.each { |comment_id| scan_comment_from_db(comment_id) }
+        comment_ids.flatten.each do |comment_id|
+            scan_comment_from_db(comment_id)
+        end
     end
 
     def scan_comment_from_db(comment_id)
         dbcomment = Comment.find_by(comment_id: comment_id)
-        puts "Found #{dbcomment} for #{comment_id}"
 
         if dbcomment.nil?
             @chatter.say("**BAD ID:** No comment exists in the database for id: #{comment_id}")
-            return
+        else
+            report_db_comments(dbcomment, should_post_matches: false)
         end
-
-        report_db_comments(dbcomment, should_post_matches: false)
     end
 
     def scan_comments(*comment_ids)
@@ -60,15 +53,17 @@ class CommentScanner
 
             if comment.nil? #Didn't actually scan
                 @chatter.say("**BAD ID:** No comment exists for id: #{comment_id} (it may have been deleted)")
-                return nil
+                next
             end
 
-            scan_se_comment(comment)#, should_post_matches)
+            scan_se_comment(comment)
         end
     end
 
     def scan_se_comments(comments)
-        comments.flatten.each { |comment| scan_se_comment(comment) }
+        comments.flatten.each do |comment|
+            scan_se_comment(comment)
+        end
     end
 
     def scan_se_comment(comment)
@@ -81,13 +76,16 @@ class CommentScanner
     end
 
     def scan_last_n_comments(num_comments)
-        return if num_comments.to_i < 1
-        comments_to_scan = @seclient.comments[0..(num_comments.to_i - 1)]
-        scan_se_comments(comments_to_scan)
+        if num_comments.to_i > 0
+            comments_to_scan = @seclient.comments[0..(num_comments.to_i - 1)]
+            scan_se_comments(comments_to_scan)
+        end
     end
 
     def report_db_comments(*comments, should_post_matches: true)
-        comments.flatten.each { |comment| report_db_comment(comment, should_post_matches: should_post_matches) }
+        comments.flatten.each do |comment| 
+            report_db_comment(comment, should_post_matches: should_post_matches)
+        end
     end
 
     def custom_report(dbcomment, custom_reason)
@@ -172,7 +170,7 @@ class CommentScanner
 
         @chatter.rooms.flatten.each do |room_id|
             room = Room.find_by(room_id: room_id)
-            next unless (!room.nil? && room.on)
+            next unless (!room.nil? && room.on?)
 
             should_post_message = ((
                                         # (room.magic_comment && has_magic_comment?(comment, post)) ||

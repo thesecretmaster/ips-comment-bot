@@ -4,20 +4,21 @@ class MockChatter
     attr_reader :HQroom, :rooms, :chats
 
     def initialize(num_child_rooms)
-        @HQroom = "HQ Baby"
-        @rooms = [*1..num_child_rooms.to_i].map {|x| "room#{x}"}
+        @HQroom = 0
+        @rooms = [*1..num_child_rooms.to_i].map { |x| (x+100) }
 
-        @reply_actions = Hash.new()
-        @command_actions = Hash.new()
-        @chats = Hash.new()
+        @reply_actions = {}
+        @command_actions = {}
+        @chats = {}
 
         @rooms ||= []
         (@rooms + [@HQroom]).each do |room_id|
             r = Room.find_or_create_by(room_id: room_id) #setup defaults in db
-            Room.turn_on(room_id)
+            r.turn_on
             r.update(regex_match: true)
+            r.save
 
-            @command_actions[room_id] = Hash.new()
+            @command_actions[room_id] = {}
             @chats[room_id] = []
         end
     end

@@ -3,10 +3,10 @@ require 'date'
 class MockClient
     attr_reader :posts
 
-    def initialize()
-        @comments = Hash.new()
-        @posts = Hash.new()
-        @users = Hash.new()
+    def initialize
+        @comments = {}
+        @posts = {}
+        @users = {}
         @last_creation_date = Date.new(2000,1,1).to_time #Make things easy...go back to a simpler time
         @last_id = 1
     end
@@ -21,11 +21,11 @@ class MockClient
     end 
 
     def comment_deleted?(comment_id)
-        !@comments.key?(comment_id)
+        !@comments.key?(comment_id.to_s)
     end
 
     def comment_with_id(comment_id)
-        @comments[comment_id]
+        @comments[comment_id.to_s]
     end
 
     def comments_after_date(date)
@@ -38,7 +38,7 @@ class MockClient
 
     def latest_comment_date
         return nil unless @comments.any?
-        @comments[@comments.keys.max].creation_date
+        @comments[@comments.keys.max{ |key| key.to_i }].creation_date
     end
 
     def new_comment(post_type, body)
@@ -46,7 +46,7 @@ class MockClient
 
         biggest_post = @posts.any? ? @posts.keys.max : 0
         biggest_user = @users.any? ? @users.keys.max : 0
-        biggest_comment = @comments.any? ? @comments.keys.max : 0
+        biggest_comment = @comments.any? ? @comments.keys.max{ |key| key.to_i }.to_i : 0
 
         comment_owner = new_user(biggest_user + 1)
         post_owner = new_user(biggest_user + 2)
@@ -54,9 +54,9 @@ class MockClient
 
         parent_post = new_post(biggest_post + 1, Date.new(2000, 1, 1).to_time, post_type, post_owner, last_editor)
 
-        @comments[biggest_comment + 1] = MockComment.new(biggest_comment + 1, @last_creation_date, parent_post.id, post_type, body, comment_owner)
+        @comments[(biggest_comment+1).to_s] = MockComment.new(biggest_comment + 1, @last_creation_date, parent_post.id, post_type, body, comment_owner)
 
-        return @comments[biggest_comment + 1]
+        return @comments[(biggest_comment+1).to_s]
     end
 
     def new_user(id)
@@ -70,7 +70,7 @@ class MockClient
     end
 
     def delete_comment(id)
-        @comments.delete(id)
+        @comments.delete(id.to_s)
     end
 
     class MockComment
@@ -84,7 +84,7 @@ class MockClient
             @post_type = post_type #Either "question" or "answer"
             @link = "https://interpersonal.stackexchange.com/q/#{post_id}/#comment#{id}" #build a mock (working) link
             @edited = false #Never used, so just say no
-            @score = 0 #Never used so just so 0
+            @score = 0 #Never used so just say 0
 
             @owner = owner
         end

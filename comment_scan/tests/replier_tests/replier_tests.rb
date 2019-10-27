@@ -17,16 +17,16 @@ class  ReplierTest < Test::Unit::TestCase
 
         #Setup chatter/commander
         @chatter = MockChatter.new(1)
-        @client = MockClient.new()
+        @client = MockClient.new
 
         @scanner = CommentScanner.new(@client, @chatter, true, [])
         @commander = Commander.new(@chatter, nil, nil, @bot_names)
         @replier = Replier.new(@chatter, @client, @scanner, @bot_names)
 
-        @commander.setup_HQ_commands() #don't really care about basics here
-        @replier.setup_reply_actions()
-        #@replier.setup_mention_actions()
-        #@replier.setup_fall_through_actions()
+        @commander.setup_HQ_commands #don't really care about basics here
+        @replier.setup_reply_actions
+        #@replier.setup_mention_actions
+        #@replier.setup_fall_through_actions
     end
 
     def teardown

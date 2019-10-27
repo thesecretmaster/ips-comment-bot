@@ -14,8 +14,8 @@ class  RegexTest < Test::Unit::TestCase
         #Client and scanner won't be used for these tests, so pass nil's (for now)
         @commander = Commander.new(@chatter, nil, nil, ['testbot', '@testbot'])
 
-        @commander.setup_basic_commands()
-        @commander.setup_HQ_commands()
+        @commander.setup_basic_commands
+        @commander.setup_HQ_commands
 
         #TODO: Going to need to fake a CLI for this test (for stuff like manscan)
     end

@@ -29,22 +29,20 @@ scanner = CommentScanner.new(seclient, chatter, settings["all_comments"], ignore
 commander = Commander.new(chatter, seclient, scanner, bot_names)
 replier = Replier.new(chatter, seclient, scanner, bot_names)
 
-commander.setup_basic_commands()
-commander.setup_HQ_commands()
-replier.setup_reply_actions()
-replier.setup_mention_actions()
-replier.setup_fall_through_actions()
+commander.setup_basic_commands
+commander.setup_HQ_commands
+replier.setup_reply_actions
+replier.setup_mention_actions
+replier.setup_fall_through_actions
 
 sleep 1 # So we don't get chat errors for 3 messages in a row
 
 post_on_startup = ARGV[0].to_i || 0
 scanner.scan_last_n_comments(post_on_startup)
 
-sleeptime = 0
 loop do
   scanner.scan_new_comments
-
-  while scanner.tick do sleep 1; end
+  sleep 1 while scanner.tick
 end
 
 

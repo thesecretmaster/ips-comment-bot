@@ -23,14 +23,14 @@ class Chatter
         @chatbot.join_room @HQroom
         @chatbot.join_rooms @rooms # THIS IS THE PROBLEM
 
-        @reply_actions = Hash.new()
-        @command_actions = Hash.new()
+        @reply_actions = {}
+        @command_actions = {}
         @mention_actions = [] 
         @fall_through_actions = [] 
 
         #TODO: mention_received logic will be run alongside both command and reply logic. Going to need to fix this at some point
         (@rooms + [@HQroom]).each do |room_id|
-            @command_actions[room_id] = Hash.new()
+            @command_actions[room_id] = {}
 
             @chatbot.add_hook(room_id, 'message') do |message|
                 message_received(room_id, message)
@@ -65,14 +65,16 @@ class Chatter
     end
 
     def mention_received(room_id, message)
-        @mention_actions.each { |action, payload| action.call(*payload, message.id, room_id, message.body) }
+        @mention_actions.each do |action, payload|
+            action.call(*payload, message.id, room_id, message.body)
+        end
     end
 
     def reply_received(room_id, message)
-        return if not message.hash.include? 'parent_id'
+        return unless message.hash.include? 'parent_id'
 
         reply_args = message.body.downcase.split(' ').drop(1) #Remove the reply portion
-        return if reply_args.length == 0 #No args
+        return if reply_args.empty? #No args
         reply_command = reply_args[0]
         reply_args = reply_args.drop(1) #drop the command
 
