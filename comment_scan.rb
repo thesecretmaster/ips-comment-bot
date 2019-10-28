@@ -431,6 +431,7 @@ cb.gen_hooks do
     command("!!/ttscan") { |bot| say "#{sleeptime} seconds remaning until the next scan" if matches_bot(bot) }
     command("!!/regexes") do |bot, reason|
       if matches_bot(bot)
+        puts "Calling regex!"
         reasons = (reason.nil? ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
           regexes = r.regexes.map { |regex| "- #{regex.post_type}: #{regex.regex}" }
           "#{r.name.gsub(/\(\@(\w*)\)/, '(*\1)')}:\n#{regexes.join("\n")}"
@@ -442,11 +443,12 @@ cb.gen_hooks do
     end
     command "!!/regexstats" do |bot, reason|
       if matches_bot(bot)
+        puts "Calling regexstats!"
         #Build array of hashes for each regex containing info to build the stat output
         regexes = (reason.nil? ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
           r.regexes.map do |regex| 
-            tps = Comment.where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
-            fps = Comment.where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
+            tps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
+            fps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
             {:effectivePercent => (tps + fps > 0) ? tps/(tps + fps).to_f : 0, 
              :tps => tps, :fps => fps, :postType => regex.post_type, :regex => regex.regex, :reason => r.name}
           end
