@@ -55,5 +55,3 @@ loop do
   scanner.scan_new_comments
   sleep 1 while scanner.tick
 end
-
-

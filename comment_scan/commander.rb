@@ -415,8 +415,8 @@ class Commander
         #Build array of hashes for each regex containing info to build the stat output
         regexes = (reason.nil? ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
             r.regexes.map do |regex| 
-                tps = Comment.where(post_type: r.post_type).where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
-                fps = Comment.where(post_type: r.post_type).where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
+                tps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
+                fps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
                 {:effectivePercent => (tps + fps > 0) ? tps/(tps + fps).to_f : 0, 
                     :tps => tps, :fps => fps, :postType => regex.post_type, :regex => regex.regex, :reason => r.name}
             end
