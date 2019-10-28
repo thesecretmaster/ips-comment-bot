@@ -80,7 +80,7 @@ class Replier
     end
 
     def contains_cat(message)
-        ["cat", "kitty", "kitties", "kitten", "meow", "purr", "feline"].any? { |cat_name| message.downcase.include? cat_name }
+        ["cat", "kitty", "kitties", "kitten", "kitteh", "meow", "purr", "feline"].any? { |cat_name| message.downcase.include? cat_name }
     end
 
     def tp(msg_id, parent_id, room_id, *args)
@@ -127,7 +127,7 @@ class Replier
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return if comment.nil?
 
-        @chatter.say("Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps", room_id)
+        @chatter.say("Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps/#{comment.rude.to_i}rudes", room_id)
     end
 
     def del_reply(msg_id, parent_id, room_id, *args)
