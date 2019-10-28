@@ -121,8 +121,8 @@ cb.gen_hooks do
             end
           else
             if reply_args.length > 2 #They're not trying to give a command
-              #Maybe make conversation back (20% chance)
-              cb.say ":#{msg.id} #{random_response()}", room_id if rand() > 0.8
+              #Maybe make conversation back (33% chance)
+              cb.say ":#{msg.id} #{random_response}", room_id if rand() > 0.67
             else
               cb.say "Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id
             end
@@ -431,13 +431,43 @@ cb.gen_hooks do
     command("!!/ttscan") { |bot| say "#{sleeptime} seconds remaning until the next scan" if matches_bot(bot) }
     command("!!/regexes") do |bot, reason|
       if matches_bot(bot)
-        reasons = (reason.nil? ? Reason.all : Reason.where(name: reason)).map do |r|
+        reasons = (reason.nil? ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
           regexes = r.regexes.map { |regex| "- #{regex.post_type}: #{regex.regex}" }
           "#{r.name.gsub(/\(\@(\w*)\)/, '(*\1)')}:\n#{regexes.join("\n")}"
         end
         reasonless_regexes = Regex.where(reason_id: nil).map { |regex| "- #{regex.post_type}: #{regex.regex}" }
         reasons << "Other Regexes:\n#{reasonless_regexes.join("\n")}"
         say reasons.join("\n")
+      end
+    end
+    command "!!/regexstats" do |bot, reason|
+      if matches_bot(bot)
+        #Build array of hashes for each regex containing info to build the stat output
+        regexes = (reason.nil? ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
+          r.regexes.map do |regex| 
+            tps = Comment.where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
+            fps = Comment.where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
+            {:effectivePercent => (tps + fps > 0) ? tps/(tps + fps).to_f : 0, 
+             :tps => tps, :fps => fps, :postType => regex.post_type, :regex => regex.regex, :reason => r.name}
+          end
+        end
+        regexes = regexes.flatten.sort_by { |regex| regex[:effectivePercent] } #Order by effectiveness
+
+        #Figure out proper widths for columns
+        most_popular_regex = regexes.max { |a, b| a[:tps] + a[:fps] <=> b[:tps] + b[:fps] }
+        tpfp_width = (("#{most_popular_regex[:tps] + most_popular_regex[:fps]}".length) * 2) + 4
+        percent_width =  regexes.any? { |regex| regex[:tps] != 0 && regex[:fps] == 0 } ? 7 : 6
+
+        #Put it all together...
+        say regexes.map { |r| 
+          [
+            "".ljust(4),
+             percent_str(r[:tps], r[:tps] + r[:fps],
+                         precision: 1, blank_str: "n/a").ljust(percent_width),
+            "(#{r[:tps]}/#{r[:tps] + r[:fps]})".ljust(tpfp_width),
+            "| #{r[:regex]} (#{r[:postType]} - #{r[:reason]})"
+          ].join
+        }.join("\n")
       end
     end
   end

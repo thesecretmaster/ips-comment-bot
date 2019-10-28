@@ -121,9 +121,9 @@ def perspective_scan(text, perspective_key: '', perspective_log: Logger.new('/de
   end
 end
 
-def percent_str(numerator, denominator)
-  return '-' if denominator.zero?
-  "#{(numerator*100.0/denominator).round(8)}%"
+def percent_str(numerator, denominator, precision: 8, blank_str: '-')
+  return blank_str if denominator.zero?
+  "#{(numerator*100.0/denominator).round(precision)}%"
 end
 
 def post_exists?(cli, post_id)
