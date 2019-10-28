@@ -4,7 +4,7 @@ require "htmlentities"
 class Chatter
     attr_reader :HQroom, :rooms
 
-    def initialize(chatXuser, chatXpwd, hqroom, logger, *rooms)
+    def initialize(chatXuser, chatXpwd, hqroom, logger, rooms)
         @logger = logger
 
         @chatbot = ChatBot.new(chatXuser, chatXpwd, log_location: STDOUT, log_formatter: @logger.formatter)
