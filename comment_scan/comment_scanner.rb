@@ -24,11 +24,7 @@ class CommentScanner
     end
 
     def tick
-        @time_to_scan -= 1
-        if @time_to_scan <= 0
-            @time_to_scan = 60
-            return false
-        end
+        (@time_to_scan = 60; return false) if (@time_to_scan -= 1) <= 0
         return true
     end
 

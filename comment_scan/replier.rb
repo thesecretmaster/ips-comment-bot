@@ -282,8 +282,7 @@ class Replier
         elsif !hg_comment.nil?
             @chatter.say("Invalid comment type. Reply to howgood with <comment_type> <num> to print num matches of comment_type where comment types are tp, fp, and *", room_id)
         else
-            @logger.debug "That was not a report"
-            # @chatter.say("That was not a report", room_id)
+            #That was not a report
         end
     end
 
