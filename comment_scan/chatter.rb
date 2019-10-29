@@ -65,6 +65,10 @@ class Chatter
     def reply_received(room_id, message)
         return unless message.hash.include? 'parent_id'
 
+        #Grab/create/update chat user
+        chat_user = ChatUser.find_or_create_by(user_id: message.hash['user_id'])
+        chat_user.update(name: message.hash['user_name'])
+
         reply_args = message.body.downcase.split(' ').drop(1) #Remove the reply portion
         return if reply_args.empty? #No args
         reply_command = reply_args[0]

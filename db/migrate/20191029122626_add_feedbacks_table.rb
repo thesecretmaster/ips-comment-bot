@@ -1,6 +1,6 @@
 class AddFeedbacksTable < ActiveRecord::Migration[5.2]
   def change
-    create_table :chat_user do |c|
+    create_table :chat_users do |c|
         c.text :name
         c.bigint :user_id
     end

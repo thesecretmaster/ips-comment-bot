@@ -12,7 +12,7 @@
 
 ActiveRecord::Schema.define(version: 2019_10_29_122626) do
 
-  create_table "chat_user", force: :cascade do |t|
+  create_table "chat_users", force: :cascade do |t|
     t.text "name"
     t.bigint "user_id"
   end
