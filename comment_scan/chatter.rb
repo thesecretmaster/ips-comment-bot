@@ -57,8 +57,12 @@ class Chatter
     end
 
     def mention_received(room_id, message)
+        #Grab/create/update chat user
+        chat_user = ChatUser.find_or_create_by(user_id: message.hash['user_id'])
+        chat_user.update(name: message.hash['user_name'])
+
         @mention_actions.each do |action, payload|
-            action.call(*payload, message.id, room_id, message.body)
+            action.call(*payload, message.id, chat_user, room_id, message.body)
         end
     end
 
@@ -77,17 +81,19 @@ class Chatter
         if @reply_actions.key?(reply_command)
             begin
                 @reply_actions[reply_command].each do |action, args_to_pass|
-                    action.call(*args_to_pass, message.id, message.hash['parent_id'], room_id, *reply_args)
+                    action.call(*args_to_pass, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
                 end
             rescue ArgumentError => e
                 say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
                 @logger.warn e
-                #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_command_action?
+                #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_reply_action?
             rescue Exception => e
                 say("Got exception ```#{e}``` processing your response", room_id)
             end
         else
-            @fall_through_actions.each { |action, payload| action.call(*payload, message.id, message.hash['parent_id'], room_id, *reply_args)}
+            @fall_through_actions.each do |action, payload|
+                action.call(*payload, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
+            end
         end
     end
 

@@ -47,8 +47,12 @@ class MockChatter
         end
     end
 
-    def simulate_reply(room_id, parent_msg_id, message)
+    def simulate_reply(room_id, parent_msg_id, message, userid="9999")
         #@reply_actions[args[0]].call(msg_id, parent_msg_id, room_id, *args) if @reply_actions.key?(args[0])
+
+        #Grab/create/update chat user
+        chat_user = ChatUser.find_or_create_by(user_id: userid)
+        chat_user.update(name: "Mock User #{userid}")
 
         reply_args = message.downcase.split(' ')
         return if reply_args.length == 0 #No args
@@ -62,7 +66,7 @@ class MockChatter
             begin
                 @reply_actions[reply_command].each do |action, args_to_pass|
                     #                         vvvvv Pass fake message id (only used for replies)
-                    action.call(*args_to_pass, 666, parent_msg_id, room_id, *reply_args)
+                    action.call(*args_to_pass, 666, parent_msg_id, chat_user, room_id, *reply_args)
                 end
             rescue ArgumentError => e
                 say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)

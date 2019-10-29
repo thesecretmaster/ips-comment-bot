@@ -83,7 +83,7 @@ class Replier
         ["cat", "kitty", "kitties", "kitten", "kitteh", "meow", "purr", "feline"].any? { |cat_name| message.downcase.include? cat_name }
     end
 
-    def tp(msg_id, parent_id, room_id, *args)
+    def tp(msg_id, parent_id, chat_user, room_id, *args)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return if comment.nil?
 
@@ -94,7 +94,7 @@ class Replier
         @chatter.say "Marked this comment as caught correctly (tp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself.", room_id
     end
 
-    def fp(msg_id, parent_id, room_id, *args)
+    def fp(msg_id, parent_id, chat_user, room_id, *args)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return if comment.nil?
 
@@ -104,7 +104,7 @@ class Replier
         @chatter.say "Marked this comment as caught incorrectly (fp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps", room_id
     end
 
-    def rude(msg_id, parent_id, room_id, *args)
+    def rude(msg_id, parent_id, chat_user, room_id, *args)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return if comment.nil?
 
@@ -116,21 +116,21 @@ class Replier
         @chatter.say("Registered as rude. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself.", room_id)
     end
 
-    def dbid(msg_id, parent_id, room_id, *args)
+    def dbid(msg_id, parent_id, chat_user, room_id, *args)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return if comment.nil?
 
         @chatter.say("This comment has id #{comment.id} in the database", room_id)
     end
 
-    def feedbacks(msg_id, parent_id, room_id, *args)
+    def feedbacks(msg_id, parent_id, chat_user, room_id, *args)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return if comment.nil?
 
         @chatter.say("Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps/#{comment.rude.to_i}rudes", room_id)
     end
 
-    def del_reply(msg_id, parent_id, room_id, *args)
+    def del_reply(msg_id, parent_id, chat_user, room_id, *args)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return if comment.nil?
 
@@ -139,7 +139,7 @@ class Replier
         end
     end
 
-    def huh(msg_id, parent_id, room_id, *args)
+    def huh(msg_id, parent_id, chat_user, room_id, *args)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return if comment.nil?
 
@@ -163,7 +163,7 @@ class Replier
         @chatter.say((reason_text.empty? ? "Comment didn't match any regexes" : reason_text), room_id)
     end
 
-    def rescan(msg_id, parent_id, room_id, *args)
+    def rescan(msg_id, parent_id, chat_user, room_id, *args)
         db_comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return if db_comment.nil?
 
@@ -174,18 +174,18 @@ class Replier
         end
     end
 
-    def report(msg_id, parent_id, room_id, *report_reason)
+    def report(msg_id, parent_id, chat_user, room_id, *report_reason)
         db_comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return if db_comment.nil?
 
         if @seclient.comment_deleted?(db_comment["comment_id"])
             @chatter.say("Comment with id #{db_comment["comment_id"]} was deleted and cannot be reported.", room_id)
         else
-            @scanner.custom_report(db_comment, "Reported with custom reason: #{report_reason.join(' ')}")
+            @scanner.custom_report(db_comment, "Reported with custom reason: \"#{report_reason.join(' ')}\" by #{chat_user.name}")
         end
     end
 
-    def howgood_tp(msg_id, parent_id, room_id, num_to_display='3')
+    def howgood_tp(msg_id, parent_id, chat_user, room_id, num_to_display='3')
         hg_comment = MessageCollection::ALL_ROOMS.howgood_for(parent_id.to_i)
         return if hg_comment.nil?
 
@@ -212,7 +212,7 @@ class Replier
         end
     end
 
-    def howgood_fp(msg_id, parent_id, room_id, num_to_display='3')
+    def howgood_fp(msg_id, parent_id, chat_user, room_id, num_to_display='3')
         hg_comment = MessageCollection::ALL_ROOMS.howgood_for(parent_id.to_i)
         return if hg_comment.nil?
 
@@ -239,7 +239,7 @@ class Replier
         end
     end
 
-    def howgood_glob(msg_id, parent_id, room_id, num_to_display='3')
+    def howgood_glob(msg_id, parent_id, chat_user, room_id, num_to_display='3')
         hg_comment = MessageCollection::ALL_ROOMS.howgood_for(parent_id.to_i)
         return if hg_comment.nil?
 
@@ -268,7 +268,7 @@ class Replier
 
     #TODO: Add a "none" option for howgood at some point. Would work by checking that tps/fps = nil
 
-    def bad_command(msg_id, parent_id, room_id, *args)
+    def bad_command(msg_id, parent_id, chat_user, room_id, *args)
         db_comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         hg_comment = MessageCollection::ALL_ROOMS.howgood_for(parent_id.to_i)
 
@@ -286,7 +286,7 @@ class Replier
         end
     end
 
-    def cat_mentions(msg_id, room_id, message)
+    def cat_mentions(msg_id, chat_user, room_id, message)
         return unless contains_cat(message)
 
         cat_response = HTTParty.post("https://aws.random.cat/meow")
