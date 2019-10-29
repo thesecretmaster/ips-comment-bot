@@ -275,7 +275,7 @@ class Replier
         if !db_comment.nil?
             if args.length > 0 #They're not trying to give a command
                 #Maybe make conversation back (33% chance)
-                @chatter.say(":#{msg_id} #{random_response}", room_id) if rand > 0.67
+                @chatter.say(":#{msg_id} #{random_response}", room_id) if rand > 0.85
             else
                 @chatter.say("Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id)
             end
