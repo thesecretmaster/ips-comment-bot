@@ -10,7 +10,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_08_30_204015) do
+ActiveRecord::Schema.define(version: 2019_10_29_122626) do
+
+  create_table "chat_user", force: :cascade do |t|
+    t.text "name"
+    t.bigint "user_id"
+  end
 
   create_table "comments", force: :cascade do |t|
     t.text "body"
@@ -29,6 +34,18 @@ ActiveRecord::Schema.define(version: 2018_08_30_204015) do
     t.integer "rude"
     t.datetime "creation_date"
     t.decimal "perspective_score", precision: 15, scale: 10
+  end
+
+  create_table "feedback_typedefs", force: :cascade do |t|
+    t.text "feedback"
+  end
+
+  create_table "feedbacks", force: :cascade do |t|
+    t.integer "feedback_type_id"
+    t.integer "comment_id"
+    t.bigint "chat_user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "reasons", force: :cascade do |t|

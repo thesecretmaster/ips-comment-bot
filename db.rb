@@ -85,3 +85,16 @@ end
 
 class WhitelistedUser < ActiveRecord::Base
 end
+
+class ChatUser < ActiveRecord::Base
+  has_many :feedbacks, foreign_key: 'chat_user_id'
+end
+
+class FeedbackTypedef < ActiveRecord::Base
+  has_many :feedbacks, foreign_key: 'id'
+end
+
+class Feedback < ActiveRecord::Base
+  belongs_to :chat_user_id, class_name: "ChatUser"
+  belongs_to :feedback_type_id, class_name: "FeedbackTypedef"
+end
