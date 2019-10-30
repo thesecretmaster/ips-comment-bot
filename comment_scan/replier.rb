@@ -83,37 +83,60 @@ class Replier
         ["cat", "kitty", "kitties", "kitten", "kitteh", "meow", "purr", "feline"].any? { |cat_name| message.downcase.include? cat_name }
     end
 
-    def tp(msg_id, parent_id, chat_user, room_id, *args)
+    def record_feedback(feedback_id, parent_id, chat_user, room_id)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return if comment.nil?
 
         comment.tps ||= 0
-        comment.tps += 1
-        comment.save
+        comment.fps ||= 0
+        comment.rude ||= 0
 
-        @chatter.say "Marked this comment as caught correctly (tp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself.", room_id
+        existing_feedback = Feedback.find_by(comment_id: comment.id, chat_user_id: chat_user.id)
+
+        if existing_feedback.nil? #Create new feedback
+            Feedback.create(comment_id: comment.id, chat_user_id: chat_user.id, feedback_type_id: feedback_id)
+        elsif existing_feedback.feedback_type_id #If one exists, then undo it
+            comment.remove_feedback(existing_feedback.feedback_type_id)
+
+            if existing_feedback.feedback_type_id == feedback_id #They're only trying to undo
+                existing_feedback.delete
+                @chatter.say "Un-#{FeedbackTypedef.feedback_name(feedback_id)}'ed this comment. Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps."
+                comment.save
+                return
+            end
+        end
+
+        result_txt = ''
+        comment.add_feedback(feedback_id)
+
+        case feedback_id
+        when FeedbackTypedef.tp
+            result_txt = "Marked this comment as caught correctly (tp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself."
+        when FeedbackTypedef.fp
+            result_txt = "Marked this comment as caught incorrectly (fp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps"
+        when FeedbackTypedef.rude
+            result_txt = "Registered as rude. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself."
+        end
+
+        if !existing_feedback.nil? #Feedback switch
+            result_txt = "Switching feedback from #{FeedbackTypedef.feedback_name(existing_feedback.feedback_type_id)} to #{FeedbackTypedef.feedback_name(feedback_id)}. Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps"
+            existing_feedback.feedback_type_id = feedback_id
+            existing_feedback.save
+        end
+
+        @chatter.say(result_txt, room_id)
+    end
+
+    def tp(msg_id, parent_id, chat_user, room_id, *args)
+        record_feedback(FeedbackTypedef.tp, parent_id, chat_user, room_id)
     end
 
     def fp(msg_id, parent_id, chat_user, room_id, *args)
-        comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
-        return if comment.nil?
-
-        comment.fps ||= 0
-        comment.fps += 1
-        comment.save
-        @chatter.say "Marked this comment as caught incorrectly (fp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps", room_id
+        record_feedback(FeedbackTypedef.fp, parent_id, chat_user, room_id)
     end
 
     def rude(msg_id, parent_id, chat_user, room_id, *args)
-        comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
-        return if comment.nil?
-
-        comment.rude ||= 0
-        comment.tps ||= 0
-        comment.rude += 1
-        comment.tps += 1
-        comment.save
-        @chatter.say("Registered as rude. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself.", room_id)
+        record_feedback(FeedbackTypedef.rude, parent_id, chat_user, room_id)
     end
 
     def dbid(msg_id, parent_id, chat_user, room_id, *args)
@@ -274,7 +297,7 @@ class Replier
 
         if !db_comment.nil?
             if args.length > 0 #They're not trying to give a command
-                #Maybe make conversation back (33% chance)
+                #Maybe make conversation back (15% chance)
                 @chatter.say(":#{msg_id} #{random_response}", room_id) if rand > 0.85
             else
                 @chatter.say("Invalid feedback type. Valid feedback types are tp, fp, rude, and wrongo", room_id)

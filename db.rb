@@ -19,7 +19,7 @@ end
 
 
 class User < ActiveRecord::Base
-  has_many :comments, foreign_key: 'owner'
+  has_many :comments
 end
 
 class Comment < ActiveRecord::Base
@@ -59,6 +59,28 @@ class Comment < ActiveRecord::Base
       end
     end
   end
+
+  def add_remove_feedback(feedback_id, is_undo)
+    case feedback_id
+    when FeedbackTypedef.tp
+      self.tps += (is_undo ? -1 : 1)
+    when FeedbackTypedef.fp
+      self.fps += (is_undo ? -1 : 1)
+    when FeedbackTypedef.rude
+      self.rude += (is_undo ? -1 : 1)
+      self.tps += (is_undo ? -1 : 1)
+    end
+
+    self.save
+  end
+
+  def add_feedback(feedback_id)
+    add_remove_feedback(feedback_id, false)
+  end
+
+  def remove_feedback(feedback_id)
+    add_remove_feedback(feedback_id, true)
+  end
 end
 
 class Regex < ActiveRecord::Base
@@ -87,14 +109,30 @@ class WhitelistedUser < ActiveRecord::Base
 end
 
 class ChatUser < ActiveRecord::Base
-  has_many :feedbacks, foreign_key: 'chat_user_id'
+  has_many :feedbacks
 end
 
 class FeedbackTypedef < ActiveRecord::Base
-  has_many :feedbacks, foreign_key: 'id'
+  has_many :feedbacks
+
+  def self.tp
+    FeedbackTypedef.find_by(feedback: "tp").id
+  end
+
+  def self.fp
+    FeedbackTypedef.find_by(feedback: "fp").id
+  end
+
+  def self.rude
+    FeedbackTypedef.find_by(feedback: "rude").id
+  end
+
+  def self.feedback_name(feedback_id)
+    FeedbackTypedef.find_by(id: feedback_id).feedback
+  end
 end
 
 class Feedback < ActiveRecord::Base
-  belongs_to :chat_user_id, class_name: "ChatUser"
-  belongs_to :feedback_type_id, class_name: "FeedbackTypedef"
+  belongs_to :chat_user, class_name: "ChatUser"
+  belongs_to :feedback_type, class_name: "FeedbackTypedef"
 end
