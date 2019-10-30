@@ -4,17 +4,10 @@ require "htmlentities"
 class Chatter
     attr_reader :HQroom, :rooms
 
-    def initialize(chatXuser, chatXpwd, hqroom, *rooms)
-        if ENV['SHORT_LOGS']
-          $stdout.sync = true #Do we really need this??
-          log_formatter = proc do |severity, datetime, progname, msg|
-            "#{msg}\n"
-          end
-        else
-          log_formatter = nil
-        end
+    def initialize(chatXuser, chatXpwd, hqroom, logger, rooms)
+        @logger = logger
 
-        @chatbot = ChatBot.new(chatXuser, chatXpwd, log_location: STDOUT, log_formatter: log_formatter)
+        @chatbot = ChatBot.new(chatXuser, chatXpwd, log_location: STDOUT, log_formatter: @logger.formatter)
         @HQroom = hqroom.to_i
         @rooms = rooms - [@HQroom] #Don't include HQ room in rooms
 
@@ -23,14 +16,14 @@ class Chatter
         @chatbot.join_room @HQroom
         @chatbot.join_rooms @rooms # THIS IS THE PROBLEM
 
-        @reply_actions = Hash.new()
-        @command_actions = Hash.new()
+        @reply_actions = Hash.new { |hash, key| hash[key] = [] } #Automagically create an array for each new key
+        @command_actions = {}
         @mention_actions = [] 
         @fall_through_actions = [] 
 
         #TODO: mention_received logic will be run alongside both command and reply logic. Going to need to fix this at some point
         (@rooms + [@HQroom]).each do |room_id|
-            @command_actions[room_id] = Hash.new()
+            @command_actions[room_id] = {}
 
             @chatbot.add_hook(room_id, 'message') do |message|
                 message_received(room_id, message)
@@ -52,7 +45,6 @@ class Chatter
     end
 
     def add_reply_action(reply, action, args_to_pass=nil)
-        @reply_actions[reply] ||= []
         @reply_actions[reply] << [action, args_to_pass]
     end
 
@@ -65,31 +57,43 @@ class Chatter
     end
 
     def mention_received(room_id, message)
-        @mention_actions.each { |action, payload| action.call(*payload, message.id, room_id, message.body) }
+        #Grab/create/update chat user
+        chat_user = ChatUser.find_or_create_by(user_id: message.hash['user_id'])
+        chat_user.update(name: message.hash['user_name'])
+
+        @mention_actions.each do |action, payload|
+            action.call(*payload, message.id, chat_user, room_id, message.body)
+        end
     end
 
     def reply_received(room_id, message)
-        return if not message.hash.include? 'parent_id'
+        return unless message.hash.include? 'parent_id'
+
+        #Grab/create/update chat user
+        chat_user = ChatUser.find_or_create_by(user_id: message.hash['user_id'])
+        chat_user.update(name: message.hash['user_name'])
 
         reply_args = message.body.downcase.split(' ').drop(1) #Remove the reply portion
-        return if reply_args.length == 0 #No args
+        return if reply_args.empty? #No args
         reply_command = reply_args[0]
         reply_args = reply_args.drop(1) #drop the command
 
         if @reply_actions.key?(reply_command)
             begin
                 @reply_actions[reply_command].each do |action, args_to_pass|
-                    action.call(*args_to_pass, message.id, message.hash['parent_id'], room_id, *reply_args)
+                    action.call(*args_to_pass, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
                 end
             rescue ArgumentError => e
                 say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
-                puts e
-                #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_command_action?
+                @logger.warn e
+                #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_reply_action?
             rescue Exception => e
                 say("Got exception ```#{e}``` processing your response", room_id)
             end
         else
-            @fall_through_actions.each { |action, payload| action.call(*payload, message.id, message.hash['parent_id'], room_id, *reply_args)}
+            @fall_through_actions.each do |action, payload|
+                action.call(*payload, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
+            end
         end
     end
 
@@ -103,7 +107,7 @@ class Chatter
             @command_actions[room_id][prefix][0].call(*@command_actions[room_id][prefix][1], room_id, *args) if @command_actions[room_id].key?(prefix)
         rescue ArgumentError => e
             say("Invalid number of arguments for '#{prefix}' command.", room_id)
-            puts e
+            @logger.warn e
             #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_command_action?
         rescue Exception => e
             say("Got exception ```#{e}``` processing your command", room_id)

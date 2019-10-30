@@ -1,7 +1,8 @@
 require 'se/api'
 
 class SEClient
-    def initialize(apiKey, site)
+    def initialize(apiKey, site, logger)
+        @logger = logger
         @site = site
         @client = SE::API::Client.new(apiKey, site: site)
     end
@@ -20,10 +21,7 @@ class SEClient
     end
 
     def comment_with_id(comment_id)
-        client_response = @client.comments(comment_id)
-        comment = client_response.empty? ? nil : client_response.first
-
-        comment
+        @client.comments(comment_id).first #will be nil if no comments returned
     end
 
     def comments_after_date(date)

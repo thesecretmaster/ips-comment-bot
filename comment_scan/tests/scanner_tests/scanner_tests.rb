@@ -12,14 +12,16 @@ class ScannerTest < Test::Unit::TestCase
         setup_db("db/test_db.sqlite3")
         wipe_db
 
+        @logger = Logger.new(STDOUT, level: Logger::ERROR, formatter: proc { |severity, datetime, progname, msg| "#{msg}\n" })
+
         #Setup chatter/commander
-        @chatter = MockChatter.new(1)
-        @client = MockClient.new()
+        @chatter = MockChatter.new(1, @logger)
+        @client = MockClient.new(@logger)
 
-        @scanner = CommentScanner.new(@client, @chatter, true, [])
-        @commander = Commander.new(@chatter, nil, nil, ['testbot', '@testbot'])
+        @scanner = CommentScanner.new(@client, @chatter, true, [], @logger)
+        @commander = Commander.new(@chatter, @client, @scanner, ['testbot', '@testbot'], @logger)
 
-        @commander.setup_HQ_commands() #don't really care about basics here
+        @commander.setup_HQ_commands #don't really care about basics here
     end
 
     def teardown
@@ -39,7 +41,7 @@ class ScannerTest < Test::Unit::TestCase
     def test_scan_deleted_comment
         test_body = "I'm a new comment!"
         secomment = @client.new_comment("question", test_body)
-        dbcomment = record_comment(secomment, perspective_score: 0)
+        dbcomment = Comment.record_comment(secomment, @logger, perspective_score: 0)
         @client.delete_comment(secomment.id)
         
         @scanner.scan_comment_from_db(dbcomment.id)
@@ -89,7 +91,7 @@ class ScannerTest < Test::Unit::TestCase
         test_body = "I'm a #{test_regex} comment"
         @chatter.simulate_message(@chatter.HQroom, "!!/add testbot q #{test_regex} #{test_reason}") 
         secomment = @client.new_comment("question", test_body)
-        dbcomment = record_comment(secomment, perspective_score: 0)
+        dbcomment = Comment.record_comment(secomment, @logger, perspective_score: 0)
 
         @scanner.scan_comment_from_db(dbcomment.id)
 

@@ -9,13 +9,15 @@ class  RegexTest < Test::Unit::TestCase
         setup_db("db/test_db.sqlite3")
         wipe_db
 
-        #Setup chatter/commander
-        @chatter = MockChatter.new(1)
-        #Client and scanner won't be used for these tests, so pass nil's (for now)
-        @commander = Commander.new(@chatter, nil, nil, ['testbot', '@testbot'])
+        @logger = Logger.new(STDOUT, level: Logger::ERROR, formatter: proc { |severity, datetime, progname, msg| "#{msg}\n" })
 
-        @commander.setup_basic_commands()
-        @commander.setup_HQ_commands()
+        #Setup chatter/commander
+        @chatter = MockChatter.new(1, @logger)
+        #Client and scanner won't be used for these tests, so pass nil's (for now)
+        @commander = Commander.new(@chatter, nil, nil, ['testbot', '@testbot'], @logger)
+
+        @commander.setup_basic_commands
+        @commander.setup_HQ_commands
 
         #TODO: Going to need to fake a CLI for this test (for stuff like manscan)
     end

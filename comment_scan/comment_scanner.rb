@@ -4,12 +4,13 @@ require_relative 'message_collection'
 class CommentScanner
     attr_reader :seclient, :chatter, :time_to_scan
 
-    def initialize(seclient, chatter, post_all_comments, ignore_users, notice_users, perspective_key: '', perspective_log: Logger.new('/dev/null'))
+    def initialize(seclient, chatter, post_all_comments, ignore_users, notice_users, logger, perspective_key: '', perspective_log: Logger.new('/dev/null'))
         @seclient = seclient
         @chatter = chatter
         @post_all_comments = post_all_comments
         @ignore_users = ignore_users
         @notice_users = notice_users
+        @logger = logger
         @perspective_key = perspective_key
         @perspective_log = perspective_log
 
@@ -24,35 +25,24 @@ class CommentScanner
     end
 
     def tick
-        @time_to_scan -= 1
-        if @time_to_scan <= 0
-            @time_to_scan = 60
-            return false
-        end
+        (@time_to_scan = 60; return false) if (@time_to_scan -= 1) <= 0
         return true
     end
-    #def scan_comment(comment_id, should_post_matches: true)
-    #    #Does the work of 
-    #    comment = seclient.comment_with_id(comment_id)
-    #    return false if comment == nil #Didn't actually scan
-    #
-    #    report_comment(comment, should_post_matches: should_post_matches)
-    #end
 
     def scan_comments_from_db(*comment_ids)
-        comment_ids.flatten.each { |comment_id| scan_comment_from_db(comment_id) }
+        comment_ids.flatten.each do |comment_id|
+            scan_comment_from_db(comment_id)
+        end
     end
 
     def scan_comment_from_db(comment_id)
         dbcomment = Comment.find_by(comment_id: comment_id)
-        puts "Found #{dbcomment} for #{comment_id}"
 
         if dbcomment.nil?
             @chatter.say("**BAD ID:** No comment exists in the database for id: #{comment_id}")
-            return
+        else
+            report_db_comments(dbcomment, should_post_matches: false)
         end
-
-        report_db_comments(dbcomment, should_post_matches: false)
     end
 
     def scan_comments(*comment_ids)
@@ -61,34 +51,39 @@ class CommentScanner
 
             if comment.nil? #Didn't actually scan
                 @chatter.say("**BAD ID:** No comment exists for id: #{comment_id} (it may have been deleted)")
-                return nil
+                next
             end
 
-            scan_se_comment(comment)#, should_post_matches)
+            scan_se_comment(comment)
         end
     end
 
     def scan_se_comments(comments)
-        comments.flatten.each { |comment| scan_se_comment(comment) }
+        comments.flatten.each do |comment|
+            scan_se_comment(comment)
+        end
     end
 
     def scan_se_comment(comment)
         body = comment.body_markdown
         toxicity = perspective_scan(body).to_f
 
-        if dbcomment = record_comment(comment, perspective_score: toxicity)
+        if dbcomment = Comment.record_comment(comment, @logger, perspective_score: toxicity)
             report_db_comments(dbcomment, should_post_matches: true)
         end
     end
 
     def scan_last_n_comments(num_comments)
-        return if num_comments.to_i < 1
-        comments_to_scan = @seclient.comments[0..(num_comments.to_i - 1)]
-        scan_se_comments(comments_to_scan)
+        if num_comments.to_i > 0
+            comments_to_scan = @seclient.comments[0..(num_comments.to_i - 1)]
+            scan_se_comments(comments_to_scan)
+        end
     end
 
     def report_db_comments(*comments, should_post_matches: true)
-        comments.flatten.each { |comment| report_db_comment(comment, should_post_matches: should_post_matches) }
+        comments.flatten.each do |comment| 
+            report_db_comment(comment, should_post_matches: should_post_matches)
+        end
     end
 
     def custom_report(dbcomment, custom_reason)
@@ -99,7 +94,7 @@ class CommentScanner
         user = User.where(id: comment["owner_id"])
         user = user.any? ? user.first : false # if user was deleted, set it to false for easy checking
 
-        puts "Grab metadata..."
+        @logger.debug "Grab metadata..."
 
         author = user ? user.display_name : "(removed)"
         author_link = user ? "[#{author}](#{user.link})" : "(removed)"
@@ -107,11 +102,11 @@ class CommentScanner
 
         #ts = ts_for(comment["creation_date"]
 
-        puts "Grab post data/build message to post..."
+        @logger.debug "Grab post data/build message to post..."
 
         msg = "##{comment["post_id"]} #{author_link} (#{rep})"
 
-        puts "Analyzing post..."
+        @logger.debug "Analyzing post..."
 
         post_inactive = false # Default to false in case we can't access post
         post = [] # so that we can use this later for whitelisted users
@@ -133,11 +128,10 @@ class CommentScanner
         # toxicity = perspective_scan(body, perspective_key: settings['perspective_key']).to_f
         toxicity = comment["perspective_score"].to_f
 
-        puts "Noticed users are: #{@noticed_users}"
-        puts "Current user is: #{user.user_id}"
         watched_user = @notice_users.include? user.user_id
 
-        puts "Building message..."
+        @logger.debug "Building message..."
+
         msg += " | Toxicity #{toxicity}"
         # msg += " | Has magic comment" if !post_exists?(cli, comment["post_id"]) and has_magic_comment? comment, post
         msg += " | High toxicity" if toxicity >= 0.7
@@ -145,7 +139,7 @@ class CommentScanner
         msg += " | Comment made by watched user" if watched_user
         msg += " | tps/fps: #{comment["tps"].to_i}/#{comment["fps"].to_i}"
 
-        puts "Building comment body..."
+        @logger.debug "Building comment body..."
 
         # If the comment exists, we can just post the link and ChatX will do the rest
         # Else, make a quote manually with just the body (no need to be fancy, this must be old)
@@ -153,7 +147,7 @@ class CommentScanner
         # TODO: Chat API is truncating to 500 characters right now even though we're good to post more. Fix this.
         comment_text_to_post = @seclient.comment_deleted?(comment["comment_id"]) ? ("\n> " + comment["body"]) : comment["link"]
 
-        puts "Check reasons..."
+        @logger.debug "Check reasons..."
 
         report_text = custom_report ? custom_text : report(comment["post_type"], comment["body_markdown"])
         reasons = report_raw(comment["post_type"], comment["body_markdown"]).map(&:reason)
@@ -164,7 +158,7 @@ class CommentScanner
 
         msgs = MessageCollection::ALL_ROOMS
 
-        puts "Post chat message..."
+        @logger.debug "Post chat message..."
 
         if @post_all_comments
             msgs.push comment, @chatter.say(comment_text_to_post)
@@ -178,7 +172,7 @@ class CommentScanner
 
         @chatter.rooms.flatten.each do |room_id|
             room = Room.find_by(room_id: room_id)
-            next unless (!room.nil? && room.on)
+            next unless (!room.nil? && room.on?)
 
             should_post_message = ((
                                         # (room.magic_comment && has_magic_comment?(comment, post)) ||
@@ -249,7 +243,7 @@ class CommentScanner
     def perspective_scan(text)
         return 'NoKey' unless @perspecitve_key
 
-        puts "Perspective scan..."
+        @logger.debug "Perspective scan..."
         response = HTTParty.post("https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=#{@perspective_key}",
         :body => {
             "comment" => {

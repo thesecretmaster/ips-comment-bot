@@ -4,10 +4,6 @@ class MessageCollection
     @howgoods = {}
   end
   
-  def mytest()
-    print "Message count is:" + @messages.keys.count.to_s
-  end
-  
   #TODO: Add some way to see what the regex was run on
   #       ie: q, a, *
   def push_howgood(regex_and_type, msg_ids)

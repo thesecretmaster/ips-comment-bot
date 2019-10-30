@@ -13,20 +13,22 @@ class  ReplierTest < Test::Unit::TestCase
         setup_db("db/test_db.sqlite3")
         wipe_db
 
+        @logger = Logger.new(STDOUT, level: Logger::ERROR, formatter: proc { |severity, datetime, progname, msg| "#{msg}\n" })
+
         @bot_names = ['testbot', '@testbot']
 
         #Setup chatter/commander
-        @chatter = MockChatter.new(1)
-        @client = MockClient.new()
+        @chatter = MockChatter.new(1, @logger)
+        @client = MockClient.new(@logger)
 
-        @scanner = CommentScanner.new(@client, @chatter, true, [])
-        @commander = Commander.new(@chatter, nil, nil, @bot_names)
-        @replier = Replier.new(@chatter, @client, @scanner, @bot_names)
+        @scanner = CommentScanner.new(@client, @chatter, true, [], @logger)
+        @commander = Commander.new(@chatter, nil, nil, @bot_names, @logger)
+        @replier = Replier.new(@chatter, @client, @scanner, @bot_names, @logger)
 
-        @commander.setup_HQ_commands() #don't really care about basics here
-        @replier.setup_reply_actions()
-        #@replier.setup_mention_actions()
-        #@replier.setup_fall_through_actions()
+        @commander.setup_HQ_commands #don't really care about basics here
+        @replier.setup_reply_actions
+        #@replier.setup_mention_actions
+        #@replier.setup_fall_through_actions
     end
 
     def teardown
@@ -42,7 +44,7 @@ class  ReplierTest < Test::Unit::TestCase
         fps_before = dbcomment.fps.to_i
         rudes_before = dbcomment.rude.to_i
 
-        @chatter.simulate_reply(@chatter.HQroom, 0, "tp")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "tp", "3333")
 
         assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before + 1}tps/#{fps_before}fps")
         assert_equal(tps_before + 1, dbcomment.tps.to_i, "Comment not updated in db correctly")
@@ -58,7 +60,7 @@ class  ReplierTest < Test::Unit::TestCase
         fps_before = dbcomment.fps.to_i
         rudes_before = dbcomment.rude.to_i
 
-        @chatter.simulate_reply(@chatter.HQroom, 0, "fp")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "fp", "4444")
 
         assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before}tps/#{fps_before + 1}fps")
         assert_equal(tps_before, dbcomment.tps.to_i, "Comment not updated in db correctly")
@@ -74,7 +76,7 @@ class  ReplierTest < Test::Unit::TestCase
         fps_before = dbcomment.fps.to_i
         rudes_before = dbcomment.rude.to_i
 
-        @chatter.simulate_reply(@chatter.HQroom, 0, "rude")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "rude", "5555")
 
         assert(@chatter.chats[@chatter.HQroom][-1].include? "rude")
         assert_equal(tps_before + 1, dbcomment.tps.to_i, "Comment not updated in db correctly")
