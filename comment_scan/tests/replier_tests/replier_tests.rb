@@ -44,7 +44,7 @@ class  ReplierTest < Test::Unit::TestCase
         fps_before = dbcomment.fps.to_i
         rudes_before = dbcomment.rude.to_i
 
-        @chatter.simulate_reply(@chatter.HQroom, 0, "tp")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "tp", "3333")
 
         assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before + 1}tps/#{fps_before}fps")
         assert_equal(tps_before + 1, dbcomment.tps.to_i, "Comment not updated in db correctly")
@@ -60,7 +60,7 @@ class  ReplierTest < Test::Unit::TestCase
         fps_before = dbcomment.fps.to_i
         rudes_before = dbcomment.rude.to_i
 
-        @chatter.simulate_reply(@chatter.HQroom, 0, "fp")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "fp", "4444")
 
         assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before}tps/#{fps_before + 1}fps")
         assert_equal(tps_before, dbcomment.tps.to_i, "Comment not updated in db correctly")
@@ -76,7 +76,7 @@ class  ReplierTest < Test::Unit::TestCase
         fps_before = dbcomment.fps.to_i
         rudes_before = dbcomment.rude.to_i
 
-        @chatter.simulate_reply(@chatter.HQroom, 0, "rude")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "rude", "5555")
 
         assert(@chatter.chats[@chatter.HQroom][-1].include? "rude")
         assert_equal(tps_before + 1, dbcomment.tps.to_i, "Comment not updated in db correctly")
