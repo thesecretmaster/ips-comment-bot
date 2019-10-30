@@ -9,7 +9,7 @@ Prerequisites:
 
 To install:
 
-- Clone this repo (`git clone https://github.com/izwick-schachter/ips-comment-bot`)
+- Clone this repo (`git clone https://github.com/thesecretmaster/ips-comment-bot`)
 - cd in to the directory (`cd ips-comment-bot`)
 - Install dependencies (`bundle install`)
 - Setup the database (`bundle exec rake db:setup`)
