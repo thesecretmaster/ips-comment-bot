@@ -1,21 +1,46 @@
-Note: If <botname> is the only argument, it can be ommitted and the command will be seen by all bots. If <botname> is "*" all bots will repond as though they've been mentioned.
+Note: If <arg> can be ommitted it will look like <arg='default val'>. If <arg> can only have certain values, it will look like <arg(val1/val2)>. If any <bot> arg is "*" all bots will repond as though they've been mentioned.
 
-!!/add <botname> <type> <regex> <reason> - The bot will create a regex <regex> for the post type <type>, optionally with the reason <reason>.
-!!/alive <botname> - It'll tell you if it's alive
-!!/del <botname> <type> <regex> - Will destroy first regex to match criteria
-!!/help <botname> - Prints this help page
-!!/howgood <botname> <post_type> <regex> - Produce a table of all comments on <post_type> posts that match <regex> where <post_type> is one of: q, a, *
-!!/howmany <botname> - Prints the number of comments scanned by the bot
-!!/kill <botname> - Kills the bots
-!!/logsize <botname> - The current sizes of the logs. Occasionally there are disk space issues on the server and thesecretmaster needs to destroy some logs. Ping thesecretmaster if any of the numbers are > 2000MB.
-!!/manscan <botname> <comment_id's> - Re-report comments with <comment_id's>. <comment_id's> should be a space seperated list of ID's
-!!/mode <botname> - Lists the current bot mode (parent/child) and the parent/child rooms
-!!/pull <botname> - Updates the bots from the git repository
-!!/quota <botname> - How much of bot's API quota has been used (restarts at 10,000 every 24 hours-ish)
-!!/regexes <botname> - Lists all the regexes in the bot
-!!/restart <botname> - Makes the bot restart without pulling (e.g. to update config)
-!!/rev <botname> - Prints the current git revision that the bot is at
-!!/test <botname> <type (q/a)> <contents> - Scans the contents as though it was a comment (but only for regex, not magic comment)
-!!/ttscan <botname> - Prints the time until the next poll of the API
-!!/uptime <botname> - How long since bot has been restarted
-!!/whoami - Prints the name(s) that the bot responds to
+BASIC COMMANDS
+ - !!/alive <bot='*'> - It'll tell you if it's alive
+ - !!/help <bot='*'> - Prints this help page
+ - !!/mode <bot='*'> - Lists the current bot mode (parent/child) and the parent/child rooms
+ - !!/notify <bot> <type> <status(on/off)> - Control what this room should be notified of
+ - !!/off <bot='*'> - Turn off bot for this room
+ - !!/on <bot='*'> - Turn on bot for this room
+ - !!/reports <bot='*'> - Get a list of what this room will be notified of
+ - !!/whoami - Prints the name(s) that the bot responds to
+
+HQ ONLY COMMANDS
+ - !!/add <bot> <type> <regex> <reason> - The bot will create a regex <regex> for the post type <type>, optionally with the reason <reason>.
+ - !!/cid <bot> <comment_id1> <coment_id2> [...] - Similar to !!/manscan, but will not report to child room (and can scan deleted comments).
+ - !!/del <bot> <type> <regex> - Will destroy first regex to match criteria
+ - !!/howgood <bot> <post_type(q/a/*)> <regex> - Produce a table of all comments on <post_type> posts that match <regex>
+ - !!/howmany <bot='*'> - Prints the number of comments scanned by the bot
+ - !!/kill <bot='*'> - Kills the bots
+ - !!/last <bot='*'> <num='1'> - Re-report last <num> comments.
+ - !!/logsize <bot='*'> - The current sizes of the logs. Occasionally there are disk space issues on the server and thesecretmaster needs to destroy some logs. Ping thesecretmaster if any of the numbers are > 2000MB.
+ - !!/manscan <bot> <comment_id1> <comment_id2> [...] - Re-report comments by id.
+ - !!/master <bot='*'> - Switch to master branch (if not already on it).
+ - !!/pull <bot='*'> - Updates the bots from the git repository
+ - !!/quota <bot='*'> - How much of bot's API quota has been used (restarts at 10,000 every 24 hours-ish)
+ - !!/regexes <bot='*'> - Lists all the regexes in the bot
+ - !!/regexstats <bot='*'> <reason='*'> - Calculate and display effectiveness of all regexes for <reason>
+ - !!/restart <bot='*'> - Makes the bot restart without pulling (e.g. to update config)
+ - !!/rev <bot='*'> - Prints the current git revision that the bot is at
+ - !!/test <bot> <type(q/a)> <contents> - Scans the contents as though it was a comment (but only for regex, not magic comment)
+ - !!/ttscan <bot='*'> - Prints the time until the next poll of the API
+ - !!/unwhitelist <bot> <user_id1> <user_id2> [...] - Un-whitelists users
+ - !!/uptime <bot='*'> - How long since bot has been restarted
+ - !!/whitelist <bot> <user_id1> <user_id2> [...] - Whitelists users (they won't be reported to child rooms)
+ - !!/whitelisted <bot='*'> - Show current list of whitelisted users
+
+ COMMENT REPLY COMMANDS
+  - dbid - Get the database id of comment.
+  - del - Delete the posting of this comment (only works for a few minutes after comment is reported).
+  - feedbacks - Get current feedbacks on this comment.
+  - fp - Mark comment as caught correctly. (If you've already marked it fp, unmark this comment)
+  - huh? - Get a list of reasons why this comment was reported to the child room.
+  - report <report_reason> - Custom report comment to child room, showing <report_reason>.
+  - rescan - Re-scan and this comment (will repost to child room as well!).
+  - rude - Mark comment as rude and caught correctly. (If you've already marked it rude, unmark this comment)
+  - tp - Mark comment as caught correctly. (If you've already marked it tp, unmark this comment)

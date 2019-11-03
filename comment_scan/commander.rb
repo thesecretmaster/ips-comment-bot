@@ -14,37 +14,37 @@ class Commander
         @basic_commands = {}
         @HQ_commands = {}
 
-        @basic_commands["!!/whoami"] = method(:whoami)
         @basic_commands["!!/alive"] = method(:alive)
-        @basic_commands["!!/on"] = method(:on)
-        @basic_commands["!!/off"] = method(:off)
-        @basic_commands["!!/mode"] = method(:mode)
         @basic_commands["!!/help"] = method(:help)
+        @basic_commands["!!/mode"] = method(:mode)
         @basic_commands["!!/notify"] = method(:notify)
+        @basic_commands["!!/off"] = method(:off)
+        @basic_commands["!!/on"] = method(:on)
         @basic_commands["!!/reports"] = method(:reports)
+        @basic_commands["!!/whoami"] = method(:whoami)
 
-        @HQ_commands["!!/whitelist"] = method(:whitelistuser)
-        @HQ_commands["!!/unwhitelist"] = method(:unwhitelistuser)
-        @HQ_commands["!!/whitelisted"] = method(:whitelisted)
-        @HQ_commands["!!/quota"] = method(:quota)
-        @HQ_commands["!!/uptime"] = method(:uptime)
-        @HQ_commands["!!/logsize"] = method(:logsize)
-        @HQ_commands["!!/howmany"] = method(:howmany)
-        @HQ_commands["!!/test"] = method(:test)
-        @HQ_commands["!!/howgood"] = method(:howgood)
-        @HQ_commands["!!/del"] = method(:del_regex)
         @HQ_commands["!!/add"] = method(:add_regex)
         @HQ_commands["!!/cid"] = method(:cid)
-        @HQ_commands["!!/pull"] = method(:pull)
-        @HQ_commands["!!/master"] = method(:master)
-        @HQ_commands["!!/restart"] = method(:restart)
+        @HQ_commands["!!/del"] = method(:del_regex)
+        @HQ_commands["!!/howgood"] = method(:howgood)
+        @HQ_commands["!!/howmany"] = method(:howmany)
         @HQ_commands["!!/kill"] = method(:kill)
-        @HQ_commands["!!/rev"] = method(:rev)
-        @HQ_commands["!!/manscan"] = method(:manscan)
-        @HQ_commands["!!/ttscan"] = method(:ttscan)
         @HQ_commands["!!/last"] = method(:last)
+        @HQ_commands["!!/logsize"] = method(:logsize)
+        @HQ_commands["!!/manscan"] = method(:manscan)
+        @HQ_commands["!!/master"] = method(:master)
+        @HQ_commands["!!/pull"] = method(:pull)
+        @HQ_commands["!!/quota"] = method(:quota)
         @HQ_commands["!!/regexes"] = method(:regexes)
         @HQ_commands["!!/regexstats"] = method(:regexstats)
+        @HQ_commands["!!/restart"] = method(:restart)
+        @HQ_commands["!!/rev"] = method(:rev)
+        @HQ_commands["!!/test"] = method(:test)
+        @HQ_commands["!!/ttscan"] = method(:ttscan)
+        @HQ_commands["!!/unwhitelist"] = method(:unwhitelistuser)
+        @HQ_commands["!!/uptime"] = method(:uptime)
+        @HQ_commands["!!/whitelist"] = method(:whitelistuser)
+        @HQ_commands["!!/whitelisted"] = method(:whitelisted)
 
         @start_time = Time.now
     end
@@ -410,10 +410,10 @@ class Commander
         @chatter.say(reasons.join("\n"), room_id)
     end
 
-    def regexstats(room_id, bot='*', reason=nil)
+    def regexstats(room_id, bot='*', reason='*')
         return unless matches_bot?(bot)
         #Build array of hashes for each regex containing info to build the stat output
-        regexes = (reason.nil? ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
+        regexes = (reason == '*' ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
             r.regexes.map do |regex| 
                 tps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
                 fps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }

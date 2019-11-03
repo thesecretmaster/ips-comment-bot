@@ -25,16 +25,16 @@ class Replier
 
         @fall_through_actions.push(method(:bad_command))
 
-        @reply_actions["tp"] = method(:tp)
-        @reply_actions["fp"] = method(:fp)
-        @reply_actions["wrongo"] = method(:fp) #fun fp alias
-        @reply_actions["rude"] = method(:rude)
         @reply_actions["dbid"] = method(:dbid)
-        @reply_actions["feedbacks"] = method(:feedbacks)
         @reply_actions["del"] = method(:del_reply)
+        @reply_actions["feedbacks"] = method(:feedbacks)
+        @reply_actions["fp"] = method(:fp)
         @reply_actions["huh?"] = method(:huh)
-        @reply_actions["rescan"] = method(:rescan)
         @reply_actions["report"] = method(:report)
+        @reply_actions["rescan"] = method(:rescan)
+        @reply_actions["rude"] = method(:rude)
+        @reply_actions["tp"] = method(:tp)
+        @reply_actions["wrongo"] = method(:fp) #fun fp alias
 
         @howgood_actions["tp"] = method(:howgood_tp) #For tp responses to howgood
         @howgood_actions["fp"] = method(:howgood_fp) #For fp responses to howgood
