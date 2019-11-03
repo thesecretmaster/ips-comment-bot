@@ -430,7 +430,7 @@ class Commander
                 tps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
                 fps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
                 {:effectivePercent => (tps + fps > 0) ? tps/(tps + fps).to_f : 0, 
-                    :tps => tps, :fps => fps, :postType => regex.post_type, :regex => regex.regex, :reason => r.name}
+                    :tps => tps, :fps => fps, :postType => regex.post_type, :regex => regex.regex, :reason => r.name.gsub(/\(\@(\w*)\)/, '(*\1)')}
             end
         end
         regexes = regexes.flatten.sort_by { |regex| regex[:effectivePercent] } #Order by effectiveness
