@@ -32,8 +32,8 @@ class Commander
         @HQ_commands["!!/howmany"] = method(:howmany)
         @HQ_commands["!!/test"] = method(:test)
         @HQ_commands["!!/howgood"] = method(:howgood)
-        @HQ_commands["!!/del"] = method(:del)
-        @HQ_commands["!!/add"] = method(:add)
+        @HQ_commands["!!/del"] = method(:del_regex)
+        @HQ_commands["!!/add"] = method(:add_regex)
         @HQ_commands["!!/cid"] = method(:cid)
         @HQ_commands["!!/pull"] = method(:pull)
         @HQ_commands["!!/master"] = method(:master)
@@ -301,7 +301,7 @@ class Commander
         msgs.push_howgood [regex, type], (@chatter.say("    #{final_output}", room_id))
     end
 
-    def del(room_id, bot, type, regex)
+    def del_regex(room_id, bot, type, regex)
         return unless matches_bot?(bot)
         if r = Regex.find_by(post_type: type[0], regex: regex)
             reas_id = r["reason_id"]
@@ -318,7 +318,7 @@ class Commander
 
     end
 
-    def add(room_id, bot, type, regex, *reason)
+    def add_regex(room_id, bot, type, regex, *reason)
         return unless matches_bot?(bot)
         if !["q", "a"].include? type
             commands.chatter.say("Type must be one of {q, a}", room_id)
