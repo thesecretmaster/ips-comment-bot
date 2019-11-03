@@ -90,7 +90,7 @@ class Replier
 
     def record_feedback(feedback_id, parent_id, chat_user, room_id)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
-        return if comment.nil?
+        return false if comment.nil?
 
         comment.tps ||= 0
         comment.fps ||= 0
@@ -130,6 +130,7 @@ class Replier
         end
 
         @chatter.say(result_txt, room_id)
+        return true
     end
 
     def tp(msg_id, parent_id, chat_user, room_id, *args)
@@ -146,30 +147,33 @@ class Replier
 
     def dbid(msg_id, parent_id, chat_user, room_id, *args)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
-        return if comment.nil?
+        return false if comment.nil?
 
         @chatter.say("This comment has id #{comment.id} in the database", room_id)
+        return true
     end
 
     def feedbacks(msg_id, parent_id, chat_user, room_id, *args)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
-        return if comment.nil?
+        return false if comment.nil?
 
         @chatter.say("Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps/#{comment.rude.to_i}rudes", room_id)
+        return true
     end
 
     def del_reply(msg_id, parent_id, chat_user, room_id, *args)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
-        return if comment.nil?
+        return false if comment.nil?
 
         MessageCollection::ALL_ROOMS.message_ids_for(comment).each do |id|
             @chatter.delete(id)
         end
+        return true
     end
 
     def huh(msg_id, parent_id, chat_user, room_id, *args)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
-        return if comment.nil?
+        return false if comment.nil?
 
         matched_regexes = @scanner.report_raw(comment["post_type"], comment["body_markdown"])
         # Go through regexes we matched to build reason_text
@@ -189,37 +193,40 @@ class Replier
         reason_text += "\nComment has toxicity of #{comment["perspective_score"]}" if comment["perspective_score"].to_f >= 0.7
 
         @chatter.say((reason_text.empty? ? "Comment didn't match any regexes" : reason_text), room_id)
+        return true
     end
 
     def rescan(msg_id, parent_id, chat_user, room_id, *args)
         db_comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
-        return if db_comment.nil?
+        return false if db_comment.nil?
 
         if @seclient.comment_deleted?(db_comment["comment_id"])
             @chatter.say("Comment with id #{db_comment["comment_id"]} was deleted and cannot be rescanned.", room_id)
         else
             @scanner.scan_comments(db_comment["comment_id"])
         end
+        return true
     end
 
     def report(msg_id, parent_id, chat_user, room_id, *report_reason)
         db_comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
-        return if db_comment.nil?
+        return false if db_comment.nil?
 
         if @seclient.comment_deleted?(db_comment["comment_id"])
             @chatter.say("Comment with id #{db_comment["comment_id"]} was deleted and cannot be reported.", room_id)
         else
             @scanner.custom_report(db_comment, "Reported with custom reason: \"#{report_reason.join(' ')}\" by #{chat_user.name}")
         end
+        return true
     end
 
     def howgood_tp(msg_id, parent_id, chat_user, room_id, num_to_display='3')
         hg_comment = MessageCollection::ALL_ROOMS.howgood_for(parent_id.to_i)
-        return if hg_comment.nil?
+        return false if hg_comment.nil?
 
         if num_to_display.to_i.to_s != num_to_display || (num_to_display = num_to_display.to_i) < 1
             @chatter.say("Bad number. Reply to howgood with <comment_type> <num> to print num matches of comment_type where comment types are tp, fp, and *", room_id)
-            return
+            return true
         end
 
         regex = hg_comment[0]
@@ -238,15 +245,16 @@ class Replier
         comments_to_display.take(num_to_display).each do |comment|
             @scanner.report_db_comment(comment, should_post_matches: false)
         end
+        return true
     end
 
     def howgood_fp(msg_id, parent_id, chat_user, room_id, num_to_display='3')
         hg_comment = MessageCollection::ALL_ROOMS.howgood_for(parent_id.to_i)
-        return if hg_comment.nil?
+        return false if hg_comment.nil?
 
         if num_to_display.to_i.to_s != num_to_display || (num_to_display = num_to_display.to_i) < 1
             @chatter.say("Bad number. Reply to howgood with <comment_type> <num> to print num matches of comment_type where comment types are tp, fp, and *", room_id)
-            return
+            return true
         end
 
         regex = hg_comment[0]
@@ -265,15 +273,16 @@ class Replier
         comments_to_display.take(num_to_display).each do |comment|
             @scanner.report_db_comment(comment, should_post_matches: false)
         end
+        return true
     end
 
     def howgood_glob(msg_id, parent_id, chat_user, room_id, num_to_display='3')
         hg_comment = MessageCollection::ALL_ROOMS.howgood_for(parent_id.to_i)
-        return if hg_comment.nil?
+        return false if hg_comment.nil?
 
         if num_to_display.to_i.to_s != num_to_display || (num_to_display = num_to_display.to_i) < 1
             @chatter.say("Bad number. Reply to howgood with <comment_type> <num> to print num matches of comment_type where comment types are tp, fp, and *", room_id)
-            return
+            return true
         end
 
         regex = hg_comment[0]
@@ -292,6 +301,7 @@ class Replier
         comments_to_display.take(num_to_display).each do |comment|
             @scanner.report_db_comment(comment, should_post_matches: false)
         end
+        return true
     end
 
     #TODO: Add a "none" option for howgood at some point. Would work by checking that tps/fps = nil
@@ -315,7 +325,7 @@ class Replier
     end
 
     def cat_mentions(msg_id, chat_user, room_id, message)
-        return unless contains_cat(message)
+        return false unless contains_cat(message)
 
         cat_response = HTTParty.post("https://aws.random.cat/meow")
         case cat_response.code
@@ -326,12 +336,13 @@ class Replier
             when 500...600
                 @chatter.say("ZOMG ERROR #{cat_response.code}...and no cats :(", room_id)
         end
+        return true
     end
 
     def dog_mentions(msg_id, chat_user, room_id, message)
-        return unless contains_dog(message)
+        return false unless contains_dog(message)
 
-        dog_response = HTTParty.get("https://dog.ceo/api/breeds/image/random", verify: false)
+        dog_response = HTTParty.get("https://dog.ceo/api/breeds/image/random")
         case dog_response.code
             when 200 #All good!
                 @chatter.say(":#{msg_id} #{dog_response.parsed_response["message"]}", room_id)
@@ -348,6 +359,7 @@ class Replier
                     #Just make sure we don't break everything for this...
                 end
         end
+        return true
     end
 end
 

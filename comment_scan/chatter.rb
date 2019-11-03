@@ -30,8 +30,8 @@ class Chatter
             end
 
             @chatbot.add_hook(room_id, 'reply') do |message|
-                reply_received(room_id, message)
-                mention_received(room_id, message) #Treat replies as mentions
+                #Treat replies as mentions, but only run if no reply actions were hit
+                reply_received(room_id, message) || mention_received(room_id, message)
             end
 
             @chatbot.add_hook(room_id, 'mention') do |message|
@@ -62,8 +62,10 @@ class Chatter
         chat_user.update(name: message.hash['user_name'])
 
         @mention_actions.each do |action, payload|
-            action.call(*payload, message.id, chat_user, room_id, message.body)
+            #Run at most one mention action successfully
+            return true if action.call(*payload, message.id, chat_user, room_id, message.body)
         end
+        return false
     end
 
     def reply_received(room_id, message)
@@ -74,15 +76,16 @@ class Chatter
         chat_user.update(name: message.hash['user_name'])
 
         reply_args = message.body.downcase.split(' ').drop(1) #Remove the reply portion
-        return if reply_args.empty? #No args
+        return false if reply_args.empty? #No args
         reply_command = reply_args[0]
         reply_args = reply_args.drop(1) #drop the command
 
         if @reply_actions.key?(reply_command)
             begin
-                @reply_actions[reply_command].each do |action, args_to_pass|
+                reply_responses = @reply_actions[reply_command].map do |action, args_to_pass|
                     action.call(*args_to_pass, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
                 end
+                return reply_responses.any? #return true if any responses got run
             rescue ArgumentError => e
                 say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
                 @logger.warn e
@@ -90,10 +93,12 @@ class Chatter
             rescue Exception => e
                 say("Got exception ```#{e}``` processing your response", room_id)
             end
+            return true
         else
             @fall_through_actions.each do |action, payload|
                 action.call(*payload, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
             end
+            return false
         end
     end
 
