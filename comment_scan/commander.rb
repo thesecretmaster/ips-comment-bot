@@ -425,27 +425,44 @@ class Commander
         #Build array of hashes for each regex containing info to build the stat output
         regexes = (reason == '*' ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
             r.regexes.map do |regex| 
-                tps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
-                fps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
-                {:effectivePercent => (tps + fps > 0) ? tps/(tps + fps).to_f : 0, 
-                    :tps => tps, :fps => fps, :postType => regex.post_type, :regex => regex.regex, :reason => r.name.gsub(/\(\@(\w*)\)/, '(*\1)')}
+                all_matched = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).find_all { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
+                tp_count = all_matched.count { |comment| !comment.tps.nil? && comment.tps >= 1 }
+                fp_count = all_matched.count { |comment| !comment.fps.nil? && comment.fps >= 1 }
+
+                {:effectivePercent => (tp_count + fp_count > 0) ? tp_count/(tp_count + fp_count).to_f : 0, 
+                    :tps => tp_count, :fps => fp_count, :totalMatched => all_matched.length, :postType => regex.post_type,
+                    :regex => regex.regex, :reason => r.name.gsub(/\(\@(\w*)\)/, '(*\1)')}
             end
         end
-        regexes = regexes.flatten.sort_by { |regex| regex[:effectivePercent] } #Order by effectiveness
+
+        regexes = regexes.flatten.sort do |regex1, regex2| 
+            regex1[:reason] != regex2[:reason] ? #Order by reason...
+                regex1[:reason] <=> regex2[:reason] :
+                regex1[:postType] != regex2[:postType] ? #Then post type...
+                    regex1[:postType] <=> regex2[:postType] :
+                    regex1[:totalMatched] <=> regex2[:totalMatched] #Then total Matched.
+        end
 
         #Figure out proper widths for columns
         most_popular_regex = regexes.max { |a, b| a[:tps] + a[:fps] <=> b[:tps] + b[:fps] }
         tpfp_width = (("#{most_popular_regex[:tps] + most_popular_regex[:fps]}".length) * 2) + 4
-        percent_width =  regexes.any? { |regex| regex[:tps] != 0 && regex[:fps] == 0 } ? 7 : 6
+        feedback_percent_width =  regexes.any? { |regex| regex[:tps] == 0 && regex[:fps] == 0 } ? 7 : 6
+        total_percent_width =  regexes.any? { |regex| regex[:totalMatched] == 0 } ? 7 : 6
+        largest_matched = regexes.max { |a, b| a[:totalMatched] <=> b[:totalMatched] }
+        all_width = largest_matched[:totalMatched].to_s.length + largest_matched[:tps].to_s.length + 4
 
         #Put it all together...
         @chatter.say regexes.map { |r| 
             [
                 "".ljust(4),
                 percent_str(r[:tps], r[:tps] + r[:fps],
-                        precision: 1, blank_str: "n/a").ljust(percent_width),
-                "(#{r[:tps]}/#{r[:tps] + r[:fps]})".ljust(tpfp_width),
-                "| #{r[:regex]} (#{r[:postType]} - #{r[:reason]})"
+                        precision: 1, blank_str: "n/a").ljust(feedback_percent_width),
+                "(#{r[:tps]}/#{r[:tps] + r[:fps]}) ".ljust(tpfp_width),
+                "of feedbacked | ",
+                percent_str(r[:tps], r[:totalMatched],
+                        precision: 1, blank_str: "n/a").ljust(total_percent_width),
+                "(#{r[:tps]}/#{r[:totalMatched]})".ljust(all_width),
+                "of all | #{r[:regex]} (#{r[:postType]} - #{r[:reason]})"
             ].join
         }.join("\n"), room_id
     end
