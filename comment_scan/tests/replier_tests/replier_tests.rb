@@ -147,8 +147,8 @@ class  ReplierTest < Test::Unit::TestCase
 
         @chatter.simulate_reply(@chatter.HQroom, 0, "rescan")
 
-        #One extra here for adding the regex
-        assert_equal(7, @chatter.chats[@chatter.HQroom].length, "Incorrect number of messages posted to HQ")
+        #Two extra here for adding the regex
+        assert_equal(8, @chatter.chats[@chatter.HQroom].length, "Incorrect number of messages posted to HQ")
         @chatter.rooms.each do |room_id|
             assert_equal(6, @chatter.chats[room_id].length, "Incorrect number of messages posted to child room")
         end

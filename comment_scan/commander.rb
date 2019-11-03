@@ -321,7 +321,12 @@ class Commander
     def add_regex(room_id, bot, type, regex, *reason)
         return unless matches_bot?(bot)
         if !["q", "a"].include? type
-            commands.chatter.say("Type must be one of {q, a}", room_id)
+            @chatter.say("Type must be one of {q, a}", room_id)
+            return
+        end
+
+        if reason.nil? || reason.empty?
+            @chatter.say("Reason cannot be empty.", room_id)
             return
         end
 
@@ -331,6 +336,13 @@ class Commander
             @chatter.say("Invalid regex: #{regex}", room_id)
             @chatter.say("    #{e}", room_id)
             return
+        end
+
+        comment_type = 'question' if type == 'q'
+        comment_type = 'answer' if type == 'a'
+        matched_comments = Comment.where(post_type: comment_type).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }
+        if matched_comments < 10
+            @chatter.say("**WARNING:** Regex only matched #{matched_comments} comments curently in the db. You should probably check your regex.")
         end
 
         if reason = Reason.find_or_create_by(name: reason.join(' '))

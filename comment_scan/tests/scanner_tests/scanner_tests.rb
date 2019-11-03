@@ -79,8 +79,8 @@ class ScannerTest < Test::Unit::TestCase
 
         @scanner.scan_new_comments
 
-        #           vvv  4 here because the !!/add command will generate 1
-        assert_equal(4, @chatter.chats[@chatter.HQroom].length, "Regex match was not posted to HQroom")
+        #           vvv  5 here because the !!/add command will generate 2
+        assert_equal(5, @chatter.chats[@chatter.HQroom].length, "Regex match was not posted to HQroom")
         assert(@chatter.chats[@chatter.HQroom][-1].include?(test_reason))
         assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 3 }) #Make sure comment *was* posted to other rooms
     end
@@ -95,8 +95,8 @@ class ScannerTest < Test::Unit::TestCase
 
         @scanner.scan_comment_from_db(dbcomment.id)
 
-        #           vvv  4 here because the !!/add command will generate 1
-        assert_equal(4, @chatter.chats[@chatter.HQroom].length, "Regex match was not posted to HQroom")
+        #           vvv  5 here because the !!/add command will generate 2
+        assert_equal(5, @chatter.chats[@chatter.HQroom].length, "Regex match was not posted to HQroom")
         assert(@chatter.chats[@chatter.HQroom][-1].include?(test_reason))
         assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 0 }) #Make sure comment wasn't posted to other rooms
     end
