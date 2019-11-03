@@ -62,11 +62,10 @@ class Chatter
         chat_user = ChatUser.find_or_create_by(user_id: message.hash['user_id'])
         chat_user.update(name: message.hash['user_name'])
 
-        @mention_actions.each do |action, payload|
-            #Run at most one mention action successfully
-            return true if action.call(*payload, message.id, chat_user, room_id, message.body)
+        #Run at most one mention action successfully
+        return @mention_actions.any? do |action, payload|
+            action.call(*payload, message.id, chat_user, room_id, message.body)
         end
-        return false
     end
 
     def reply_received(room_id, message)
