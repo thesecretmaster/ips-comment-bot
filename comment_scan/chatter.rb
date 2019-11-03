@@ -21,7 +21,8 @@ class Chatter
         @mention_actions = [] 
         @fall_through_actions = [] 
 
-        #TODO: mention_received logic will be run alongside both command and reply logic. Going to need to fix this at some point
+        #Note: mention_received logic will be run alongside command logic.
+        #       Since they're run in threads, it'll be hard to prevent that 
         (@rooms + [@HQroom]).each do |room_id|
             @command_actions[room_id] = {}
 
