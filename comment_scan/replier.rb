@@ -21,6 +21,7 @@ class Replier
         @howgood_actions = {}
 
         @mention_actions.push(method(:cat_mentions))
+        @mention_actions.push(method(:dog_mentions))
 
         @fall_through_actions.push(method(:bad_command))
 
@@ -81,6 +82,10 @@ class Replier
 
     def contains_cat(message)
         ["cat", "kitty", "kitties", "kitten", "kitteh", "meow", "purr", "feline"].any? { |cat_name| message.downcase.include? cat_name }
+    end
+
+    def contains_dog(message)
+        ["dog", "pup", "woof", "bark", "bow-wow", "best friend"].any? { |dog_name| message.downcase.include? dog_name }
     end
 
     def record_feedback(feedback_id, parent_id, chat_user, room_id)
@@ -319,7 +324,29 @@ class Replier
             when 404
                 @chatter.say("O noes! Cats not found!", room_id)
             when 500...600
-                @chatter.say("ZOMG ERROR #{response.code}...and no cats :(", room_id)
+                @chatter.say("ZOMG ERROR #{cat_response.code}...and no cats :(", room_id)
+        end
+    end
+
+    def dog_mentions(msg_id, chat_user, room_id, message)
+        return unless contains_dog(message)
+
+        dog_response = HTTParty.get("https://dog.ceo/api/breeds/image/random", verify: false)
+        case dog_response.code
+            when 200 #All good!
+                @chatter.say(":#{msg_id} #{dog_response.parsed_response["message"]}", room_id)
+            when 404
+                @chatter.say("O noes! Dogs not found!", room_id)
+            when 500...600
+                @chatter.say("ZOMG ERROR #{dog_response.code}...and no dogs :(", room_id)
+            else
+                begin
+                    if dog_response.parsed_response["status"] == "error"
+                        @chatter.say("dog.ceo API returned error: #{dog_response.parsed_response["message"]}")
+                    end
+                rescue Exception => e
+                    #Just make sure we don't break everything for this...
+                end
         end
     end
 end
