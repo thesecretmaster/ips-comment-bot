@@ -99,7 +99,7 @@ class Replier
         existing_feedback = Feedback.find_by(comment_id: comment.id, chat_user_id: chat_user.id)
 
         if existing_feedback.nil? #Create new feedback
-            Feedback.create(comment_id: comment.id, chat_user_id: chat_user.id, feedback_type_id: feedback_id)
+            Feedback.create(comment_id: comment.id, chat_user_id: chat_user.id, feedback_type_id: feedback_id, room_id: room_id)
         elsif existing_feedback.feedback_type_id #If one exists, then undo it
             comment.remove_feedback(existing_feedback.feedback_type_id)
 
