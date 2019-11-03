@@ -1,21 +1,21 @@
 Note: If <botname> is the only argument, it can be ommitted and the command will be seen by all bots. If <botname> is "*" all bots will repond as though they've been mentioned.
 
+!!/add <botname> <type> <regex> <reason> - The bot will create a regex <regex> for the post type <type>, optionally with the reason <reason>.
 !!/alive <botname> - It'll tell you if it's alive
+!!/del <botname> <type> <regex> - Will destroy first regex to match criteria
+!!/help <botname> - Prints this help page
+!!/howgood <botname> <post_type> <regex> - Produce a table of all comments on <post_type> posts that match <regex> where <post_type> is one of: q, a, *
+!!/howmany <botname> - Prints the number of comments scanned by the bot
+!!/kill <botname> - Kills the bots
 !!/logsize <botname> - The current sizes of the logs. Occasionally there are disk space issues on the server and thesecretmaster needs to destroy some logs. Ping thesecretmaster if any of the numbers are > 2000MB.
+!!/manscan <botname> <comment_id's> - Re-report comments with <comment_id's>. <comment_id's> should be a space seperated list of ID's
+!!/mode <botname> - Lists the current bot mode (parent/child) and the parent/child rooms
+!!/pull <botname> - Updates the bots from the git repository
 !!/quota <botname> - How much of bot's API quota has been used (restarts at 10,000 every 24 hours-ish)
+!!/regexes <botname> - Lists all the regexes in the bot
+!!/restart <botname> - Makes the bot restart without pulling (e.g. to update config)
+!!/rev <botname> - Prints the current git revision that the bot is at
+!!/test <botname> <type (q/a)> <contents> - Scans the contents as though it was a comment (but only for regex, not magic comment)
+!!/ttscan <botname> - Prints the time until the next poll of the API
 !!/uptime <botname> - How long since bot has been restarted
 !!/whoami - Prints the name(s) that the bot responds to
-!!/help <botname> - Prints this help page
-!!/howmany <botname> - Prints the number of comments scanned by the bot
-!!/test <botname> <type (q/a)> <contents> - Scans the contents as though it was a comment (but only for regex, not magic comment)
-!!/add <botname> <type> <regex> <reason> - The bot will create a regex <regex> for the post type <type>, optionally with the reason <reason>.
-!!/del <botname> <type> <regex> - Will destroy first regex to match criteria
-!!/pull <botname> - Updates the bots from the git repository
-!!/restart <botname> - Makes the bot restart without pulling (e.g. to update config)
-!!/kill <botname> - Kills the bots
-!!/rev <botname> - Prints the current git revision that the bot is at
-!!/mode <botname> - Lists the current bot mode (parent/child) and the parent/child rooms
-!!/ttscan <botname> - Prints the time until the next poll of the API
-!!/regexes <botname> - Lists all the regexes in the bot
-!!/manscan <botname> <comment_id's> - Re-report comments with <comment_id's>. <comment_id's> should be a space seperated list of ID's
-!!/howgood <botname> <post_type> <regex> - Produce a table of all comments on <post_type> posts that match <regex> where <post_type> is one of: q, a, *
