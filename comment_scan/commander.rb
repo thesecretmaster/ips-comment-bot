@@ -411,14 +411,12 @@ class Commander
         @scanner.scan_last_n_comments(num_comments)
     end
 
-    def regexes(room_id, bot='*', reason=nil)
+    def regexes(room_id, bot='*', reason='*')
         return unless matches_bot?(bot)
-        reasons = (reason.nil? ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
+        reasons = (reason == '*' ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
             regexes = r.regexes.map { |regex| "- #{regex.post_type}: #{regex.regex}" }
             "#{r.name.gsub(/\(\@(\w*)\)/, '(*\1)')}:\n#{regexes.join("\n")}"
         end
-        reasonless_regexes = Regex.where(reason_id: nil).map { |regex| "- #{regex.post_type}: #{regex.regex}" }
-        reasons << "Other Regexes:\n#{reasonless_regexes.join("\n")}"
         @chatter.say(reasons.join("\n"), room_id)
     end
 
