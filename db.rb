@@ -15,6 +15,8 @@ def wipe_db
   Reason.delete_all
   Room.delete_all
   WhitelistedUser.delete_all
+  Feedback.delete_all
+  ChatUser.delete_all
 end
 
 

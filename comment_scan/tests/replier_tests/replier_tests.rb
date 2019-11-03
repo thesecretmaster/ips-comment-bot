@@ -52,6 +52,43 @@ class  ReplierTest < Test::Unit::TestCase
         assert_equal(rudes_before, dbcomment.rude.to_i, "Comment not updated in db correctly")
     end
 
+    def test_remove_tp
+        secomment = @client.new_comment("question", "I'm a new comment!")
+        @scanner.scan_new_comments
+        dbcomment = MessageCollection::ALL_ROOMS.comment_for(0) #grab that comment
+
+        tps_before = dbcomment.tps.to_i
+        fps_before = dbcomment.fps.to_i
+        rudes_before = dbcomment.rude.to_i
+
+        @chatter.simulate_reply(@chatter.HQroom, 0, "tp", "8888")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "tp", "8888")
+
+        assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before}tps/#{fps_before}fps")
+        assert_equal(tps_before, dbcomment.tps.to_i, "Comment not updated in db correctly")
+        assert_equal(fps_before, dbcomment.fps.to_i, "Comment not updated in db correctly")
+        assert_equal(rudes_before, dbcomment.rude.to_i, "Comment not updated in db correctly")
+    end
+
+    def test_switch_tp_to_fp
+        secomment = @client.new_comment("question", "I'm a new comment!")
+        @scanner.scan_new_comments
+        dbcomment = MessageCollection::ALL_ROOMS.comment_for(0) #grab that comment
+
+        tps_before = dbcomment.tps.to_i
+        fps_before = dbcomment.fps.to_i
+        rudes_before = dbcomment.rude.to_i
+
+        @chatter.simulate_reply(@chatter.HQroom, 0, "tp", "9999")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "fp", "9999")
+
+        assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before}tps/#{fps_before + 1}fps")
+        assert_equal(tps_before, dbcomment.tps.to_i, "Comment not updated in db correctly")
+        assert_equal(fps_before + 1, dbcomment.fps.to_i, "Comment not updated in db correctly")
+        assert_equal(rudes_before, dbcomment.rude.to_i, "Comment not updated in db correctly")
+    end
+
+
     def test_fp
         secomment = @client.new_comment("question", "I'm a new comment!")
         @scanner.scan_new_comments
