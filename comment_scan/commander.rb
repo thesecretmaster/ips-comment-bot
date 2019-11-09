@@ -415,9 +415,9 @@ class Commander
         return unless matches_bot?(bot)
         reasons = (reason == '*' ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
             regexes = r.regexes.map { |regex| "- #{regex.post_type}: #{regex.regex}" }
-            "#{r.name.gsub(/\(\@(\w*)\)/, '(*\1)')}:\n#{regexes.join("\n")}"
+            "#{r.name}:\n#{regexes.join("\n")}"
         end
-        @chatter.say(reasons.join("\n"), room_id)
+        @chatter.say_pingless(reasons.join("\n"), room_id)
     end
 
     def regexstats(room_id, bot='*', reason='*')
@@ -431,7 +431,7 @@ class Commander
 
                 {:effectivePercent => (tp_count + fp_count > 0) ? tp_count/(tp_count + fp_count).to_f : 0, 
                     :tps => tp_count, :fps => fp_count, :totalMatched => all_matched.length, :postType => regex.post_type,
-                    :regex => regex.regex, :reason => r.name.gsub(/\(\@(\w*)\)/, '(*\1)')}
+                    :regex => regex.regex, :reason => r.name}
             end
         end
 
@@ -452,7 +452,7 @@ class Commander
         all_width = largest_matched[:totalMatched].to_s.length + largest_matched[:tps].to_s.length + 4
 
         #Put it all together...
-        @chatter.say regexes.map { |r| 
+        @chatter.say_pingless regexes.map { |r| 
             [
                 "".ljust(4),
                 percent_str(r[:tps], r[:tps] + r[:fps],
