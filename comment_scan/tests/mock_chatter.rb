@@ -80,6 +80,12 @@ class MockChatter
         end
     end
 
+    #A "ping" is any @ followed by 3+ word characters
+    def say_pingless(message, room=@HQroom)
+        #Replace all ping @'s with *'s
+        say(message.gsub(/\@(\w{3})/, '*\1'), room)
+    end
+
     def say(message, room=@HQroom)
         @chats[room] << message
         return @chats[room].length - 1 #Return index we just inserted

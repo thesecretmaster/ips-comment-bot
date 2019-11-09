@@ -123,10 +123,10 @@ class Chatter
         @chatbot.say(message, room)
     end
 
+    #A "ping" is any @ followed by 3+ word characters
     def say_pingless(message, room=@HQroom)
-        #A "ping" is any @ followed by 3+ word characters
         #Replace all ping @'s with *'s
-        @chatbot.say(message.gsub(/\@(\w{3})/, '*\1'), room)
+        say(message.gsub(/\@(\w{3})/, '*\1'), room)
     end
 
     def delete(message_id)
