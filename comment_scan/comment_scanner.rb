@@ -4,12 +4,15 @@ require_relative 'message_collection'
 class CommentScanner
     attr_reader :seclient, :chatter, :time_to_scan
 
-    def initialize(seclient, chatter, post_all_comments, ignore_users, logger, perspective_key: '', perspective_log: Logger.new('/dev/null'))
+    def initialize(seclient, chatter, post_all_comments, ignore_users, logger, hot_secs: 10800, 
+                    hot_comment_num: 10, perspective_key: '', perspective_log: Logger.new('/dev/null'))
         @seclient = seclient
         @chatter = chatter
         @post_all_comments = post_all_comments
         @ignore_users = ignore_users
         @logger = logger
+        @HOT_SECONDS = hot_secs
+        @HOT_COMMENT_NUM = hot_comment_num
         @perspective_key = perspective_key
         @perspective_log = perspective_log
 
@@ -29,17 +32,15 @@ class CommentScanner
         return true
     end
 
-    HOT_SECONDS = 3*60*60 # 3hrs
-    HOT_COMMENT_NUM = 10 # 10 comments/3 hrs
     def check_for_hot_post(new_comments)
         #Only check each post once, so make unique by post ID
         new_comments.flatten.uniq { |c| c.post_id }.each do |comment|
             continue unless post = @seclient.post_exists?(comment.post_id) # If post was deleted, skip it
             comments_on_post = Comment.
                                     where(post_id: comment.post_id).
-                                    where("creation_date >= :date", date: Time.at(comment.creation_date - HOT_SECONDS).to_datetime)
+                                    where("creation_date >= :date", date: Time.at(comment.creation_date - @HOT_SECONDS).to_datetime)
 
-            report_hot_post(post.link, comments_on_post.count, HOT_SECONDS/60/60) if comments_on_post.count >= HOT_COMMENT_NUM
+            report_hot_post(post.link, comments_on_post.count, @HOT_SECONDS/60/60) if comments_on_post.count >= @HOT_COMMENT_NUM
         end
     end
 
