@@ -101,4 +101,15 @@ class ScannerTest < Test::Unit::TestCase
         assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 0 }) #Make sure comment wasn't posted to other rooms
     end
 
+    def test_hot_post
+        first_comment = @client.new_comment("question", "I'm the first comment!")
+        post_id = first_comment.post_id
+        [*1..15].each { |num| @client.new_comment("question", "I'm a new comment ##{num}!", post_id: post_id) }
+
+        @scanner.scan_new_comments
+
+        assert((@chatter.rooms + [@chatter.HQroom]).all? { |room| @chatter.chats[room][-1].include?("currently hot")})
+        assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 1 }) #Make sure this was only reported once
+    end
+
 end

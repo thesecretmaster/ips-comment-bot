@@ -21,11 +21,35 @@ class CommentScanner
         new_comments = @seclient.comments_after_date(@latest_comment_date)
         @latest_comment_date = new_comments[0].json["creation_date"].to_i+1 if new_comments.any? && !new_comments[0].nil?
         scan_se_comments([new_comments])
+        check_for_hot_post([new_comments])
     end
 
     def tick
         (@time_to_scan = 60; return false) if (@time_to_scan -= 1) <= 0
         return true
+    end
+
+    HOT_SECONDS = 3*60*60 # 3hrs
+    HOT_COMMENT_NUM = 10 # 10 comments/3 hrs
+    def check_for_hot_post(new_comments)
+        #Only check each post once, so make unique by post ID
+        new_comments.flatten.uniq { |c| c.post_id }.each do |comment|
+            continue unless post = @seclient.post_exists?(comment.post_id) # If post was deleted, skip it
+            comments_on_post = Comment.
+                                    where(post_id: comment.post_id).
+                                    where("creation_date >= :date", date: Time.at(comment.creation_date - HOT_SECONDS).to_datetime)
+
+            report_hot_post(post.link, comments_on_post.count, HOT_SECONDS/60/60) if comments_on_post.count >= HOT_COMMENT_NUM
+        end
+    end
+
+    def report_hot_post(post_link, comment_num, hr_num)
+        (@chatter.rooms + [@chatter.HQroom]).flatten.each do |room_id|
+            room = Room.find_by(room_id: room_id)
+            next unless (room_id == @chatter.HQroom) || (!room.nil? && room.on? && room.regex_match)
+
+            @chatter.say("**Post is currently hot!** With #{comment_num} comments in the last #{hr_num} hours: #{post_link}", room_id)
+        end
     end
 
     def scan_comments_from_db(*comment_ids)
