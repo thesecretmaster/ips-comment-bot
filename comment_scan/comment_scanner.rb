@@ -34,7 +34,7 @@ class CommentScanner
 
     def check_for_hot_post(new_comments)
         #Only check each post once, so make unique by post ID
-        new_comments.flatten.uniq { |c| c.post_id }.each do |comment|
+        new_comments.flatten.uniq(&:post_id).each do |comment|
             continue unless post = @seclient.post_exists?(comment.post_id) # If post was deleted, skip it
             comments_on_post = Comment.
                                     where(post_id: comment.post_id).

@@ -320,15 +320,12 @@ class Commander
 
     def add_regex(room_id, bot, type, regex, *reason)
         return unless matches_bot?(bot)
-        if !["q", "a"].include? type
-            @chatter.say("Type must be one of {q, a}", room_id)
-            return
-        end
 
-        if reason.nil? || reason.empty?
-            @chatter.say("Reason cannot be empty.", room_id)
-            return
-        end
+        return @chatter.say("Reason cannot be empty.", room_id) if reason.nil? || reason.empty?
+
+        return @chatter.say("Type must be one of {q, a}", room_id) if !["q", "a"].include? type
+        comment_type = 'question' if type == 'q'
+        comment_type = 'answer' if type == 'a'
 
         begin
             %r{#{regex}}
@@ -338,8 +335,6 @@ class Commander
             return
         end
 
-        comment_type = 'question' if type == 'q'
-        comment_type = 'answer' if type == 'a'
         matched_comments = Comment.where(post_type: comment_type).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }
         if matched_comments < 10
             @chatter.say("**WARNING:** Regex only matched #{matched_comments} comments curently in the db. You should probably check your regex.")
@@ -426,8 +421,8 @@ class Commander
         regexes = (reason == '*' ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
             r.regexes.map do |regex| 
                 all_matched = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).find_all { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
-                tp_count = all_matched.count { |comment| !comment.tps.nil? && comment.tps >= 1 }
-                fp_count = all_matched.count { |comment| !comment.fps.nil? && comment.fps >= 1 }
+                tp_count = all_matched.count { |comment| comment.tps.to_i >= 1 }
+                fp_count = all_matched.count { |comment| comment.fps.to_i >= 1 }
 
                 {:effectivePercent => (tp_count + fp_count > 0) ? tp_count/(tp_count + fp_count).to_f : 0, 
                     :tps => tp_count, :fps => fp_count, :totalMatched => all_matched.length, :postType => regex.post_type,

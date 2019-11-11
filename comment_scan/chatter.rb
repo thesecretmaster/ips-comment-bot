@@ -31,12 +31,20 @@ class Chatter
             end
 
             @chatbot.add_hook(room_id, 'reply') do |message|
+                #Grab/create/update chat user
+                chat_user = ChatUser.find_or_create_by(user_id: message.hash['user_id'])
+                chat_user.update(name: message.hash['user_name'])
+
                 #Treat replies as mentions, but only run if no reply actions were hit
-                reply_received(room_id, message) || mention_received(room_id, message)
+                reply_received(room_id, chat_user, message) || mention_received(room_id, chat_user, message)
             end
 
             @chatbot.add_hook(room_id, 'mention') do |message|
-                mention_received(room_id, message)
+                #Grab/create/update chat user
+                chat_user = ChatUser.find_or_create_by(user_id: message.hash['user_id'])
+                chat_user.update(name: message.hash['user_name'])
+
+                mention_received(room_id, chat_user, message)
             end
         end
     end
@@ -57,23 +65,15 @@ class Chatter
         @fall_through_actions.push([action, args_to_pass])
     end
 
-    def mention_received(room_id, message)
-        #Grab/create/update chat user
-        chat_user = ChatUser.find_or_create_by(user_id: message.hash['user_id'])
-        chat_user.update(name: message.hash['user_name'])
-
+    def mention_received(room_id, chat_user, message)
         #Run at most one mention action successfully
-        return @mention_actions.any? do |action, payload|
+        @mention_actions.any? do |action, payload|
             action.call(*payload, message.id, chat_user, room_id, message.body)
         end
     end
 
-    def reply_received(room_id, message)
+    def reply_received(room_id, chat_user, message)
         return unless message.hash.include? 'parent_id'
-
-        #Grab/create/update chat user
-        chat_user = ChatUser.find_or_create_by(user_id: message.hash['user_id'])
-        chat_user.update(name: message.hash['user_name'])
 
         reply_args = message.body.downcase.split(' ').drop(1) #Remove the reply portion
         return false if reply_args.empty? #No args
@@ -82,10 +82,10 @@ class Chatter
 
         if @reply_actions.key?(reply_command)
             begin
-                reply_responses = @reply_actions[reply_command].map do |action, args_to_pass|
+                #Run at most one reply action successfully
+                return @reply_actions[reply_command].any? do |action, args_to_pass|
                     action.call(*args_to_pass, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
                 end
-                return reply_responses.any? #return true if any responses got run
             rescue ArgumentError => e
                 say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
                 @logger.warn e
