@@ -40,7 +40,10 @@ class CommentScanner
                                     where(post_id: comment.post_id).
                                     where("creation_date >= :date", date: Time.at(comment.creation_date - @HOT_SECONDS).to_datetime)
 
-            report_hot_post(post.link, comments_on_post.count, @HOT_SECONDS/60/60) if comments_on_post.count >= @HOT_COMMENT_NUM
+            if comments_on_post.count >= @HOT_COMMENT_NUM && !MessageCollection::ALL_ROOMS.hot_post_recorded?(post.id)
+                report_hot_post(post.link, comments_on_post.count, @HOT_SECONDS/60/60)
+                MessageCollection::ALL_ROOMS.push_hot_post(post.id)
+            end
         end
     end
 
