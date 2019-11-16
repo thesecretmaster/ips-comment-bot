@@ -99,11 +99,11 @@ class Room < ActiveRecord::Base
   end
 
   def turn_on
-    self.on = true
+    self.update(on: true)
   end
 
   def turn_off
-    self.on = false
+    self.update(on: false)
   end
 end
 

@@ -37,6 +37,7 @@ class MockChatter
         prefix = message.downcase.strip.split(" ")[0]
         args = message.scan(%r{\"(.*)\"|\'(.*)\'|([^\s]*)}).flatten.reject { |a| a.to_s.empty? }[1..-1]
 
+        @logger.debug "Got message to simulate for room ##{room_id}: #{message}"
         begin
             @command_actions[room_id][prefix][0].call(*@command_actions[room_id][prefix][1], room_id, *args) if @command_actions[room_id].key?(prefix)
             @logger.debug "Called #{prefix} logic on #{@command_actions[room_id][prefix][0]}" if @command_actions[room_id].key?(prefix)

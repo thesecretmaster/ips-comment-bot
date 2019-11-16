@@ -74,6 +74,7 @@ class Commander
     end
 
     def on?(room_id)
+        @logger.debug "Checking if #{room_id} is on: #{isHQ?(room_id) || Room.find_by(room_id: room_id).on?}" 
         isHQ?(room_id) || Room.find_by(room_id: room_id).on?
     end
 
@@ -123,7 +124,7 @@ class Commander
 
     def on(room_id, bot='*')
         return unless matches_bot?(bot)
-        if Room.find_by(roome_id: room_id).on?
+        if Room.find_by(room_id: room_id).on?
             @chatter.say("I'm already on, silly", room_id)
         else
             @chatter.say("Turning on...", room_id)
@@ -175,12 +176,12 @@ class Commander
         end
         status = {"on" => true, "off" => false}[status]
 
-        @chatter.say("I #{status ? "will" : "won't"} notify you on a #{act}", room_id) unless status.nil? || act.nil?
+        @chatter.say("I #{status ? "will" : "won't"} notify you on a #{act}.", room_id) unless status.nil? || act.nil?
         Room.find_by(room_id: room_id).update(**{act => status}) unless status.nil? || act.nil?
     end
 
     def reports(room_id, bot='*')
-        return unless matches_bot?(bot) && !on?(room_id)
+        return unless matches_bot?(bot) && on?(room_id)
         room = Room.find_by(room_id: room_id)
         @chatter.say("regex_match: #{!!room.regex_match}\nmagic_comment: #{!!room.magic_comment}", room_id)
     end
