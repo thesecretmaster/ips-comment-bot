@@ -38,7 +38,7 @@ HQ ONLY COMMANDS
   - dbid - Get the database id of comment.
   - del - Delete the posting of this comment (only works for a few minutes after comment is reported).
   - feedbacks - Get current feedbacks on this comment.
-  - fp - Mark comment as caught correctly. (If you've already marked it fp, unmark this comment)
+  - fp - Mark comment as caught incorrectly. (If you've already marked it fp, unmark this comment)
   - huh? - Get a list of reasons why this comment was reported to the child room.
   - report <report_reason> - Custom report comment to child room, showing <report_reason>.
   - rescan - Re-scan and this comment (will repost to child room as well!).

@@ -41,18 +41,18 @@ class CommentScanner
                                     where("creation_date >= :date", date: Time.at(comment.creation_date - @HOT_SECONDS).to_datetime)
 
             if comments_on_post.count >= @HOT_COMMENT_NUM && !MessageCollection::ALL_ROOMS.hot_post_recorded?(post.id)
-                report_hot_post(post.link, comments_on_post.count, @HOT_SECONDS/60/60)
+                report_hot_post(post.link, post.title, comments_on_post.count, @HOT_SECONDS/60/60)
                 MessageCollection::ALL_ROOMS.push_hot_post(post.id)
             end
         end
     end
 
-    def report_hot_post(post_link, comment_num, hr_num)
+    def report_hot_post(post_link, post_title, comment_num, hr_num)
         (@chatter.rooms + [@chatter.HQroom]).flatten.each do |room_id|
             room = Room.find_by(room_id: room_id)
             next unless (room_id == @chatter.HQroom) || (!room.nil? && room.on? && room.regex_match)
 
-            @chatter.say("**Post is currently hot!** With #{comment_num} comments in the last #{hr_num} hours: #{post_link}", room_id)
+            @chatter.say("**Post is currently hot!** With #{comment_num} comments in the last #{hr_num} hours: [#{post_title}](#{post_link})", room_id)
         end
     end
 
