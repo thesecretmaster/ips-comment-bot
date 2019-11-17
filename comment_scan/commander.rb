@@ -162,13 +162,11 @@ class Commander
 
     def notify(room_id, bot, type, status)
         return unless matches_bot?(bot) && on?(room_id)
-        actions = { "regex" => :regex_match,
-                     "magic" => :magic_comment}
-        if !actions.key?(type)
-            @chatter.say("Type must be one of {#{actions.keys.join(", ")}}")
+        if !Room.reports.key?(type)
+            @chatter.say("Type must be one of {#{Room.reports.keys.join(", ")}}")
             return
         end
-        act = actions[type]
+        act = Room.reports[type]
 
         if !["on", "off"].include? status
             @chatter.say("Status must be one of {on, off}")
@@ -176,14 +174,14 @@ class Commander
         end
         status = {"on" => true, "off" => false}[status]
 
-        @chatter.say("I #{status ? "will" : "won't"} notify you on a #{act}.", room_id) unless status.nil? || act.nil?
-        Room.find_by(room_id: room_id).update(**{act => status}) unless status.nil? || act.nil?
+        @chatter.say("I #{status ? "will" : "won't"} notify you on a #{act}.", room_id)
+        Room.find_by(room_id: room_id).update(**{act => status})
     end
 
     def reports(room_id, bot='*')
         return unless matches_bot?(bot) && on?(room_id)
         room = Room.find_by(room_id: room_id)
-        @chatter.say("regex_match: #{!!room.regex_match}\nmagic_comment: #{!!room.magic_comment}", room_id)
+        @chatter.say(Room.reports.map { |name, action| "#{action}: #{!!room.send(action)}" }.join("\n"), room_id)
     end
 
     def whitelistuser(room_id, bot, *uids)

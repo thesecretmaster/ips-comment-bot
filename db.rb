@@ -94,6 +94,16 @@ class Reason < ActiveRecord::Base
 end
 
 class Room < ActiveRecord::Base
+  def self.reports
+    {
+      "regex" => :regex_match,
+      "hot" => :hot_post,
+      "inactive" => :inactive_post,
+      "custom" => :custom_report,
+      "animals" => :animals
+    }
+  end
+
   def on?
     self.on
   end

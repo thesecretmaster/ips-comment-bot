@@ -157,7 +157,6 @@ class CommentScanner
 
         @logger.debug "Building message..."
         msg += " | Toxicity #{toxicity}"
-        # msg += " | Has magic comment" if !post_exists?(cli, comment["post_id"]) and has_magic_comment? comment, post
         msg += " | High toxicity" if toxicity >= 0.7
         msg += " | Comment on inactive post" if post_inactive
         msg += " | tps/fps: #{comment["tps"].to_i}/#{comment["fps"].to_i}"
@@ -198,7 +197,6 @@ class CommentScanner
             next unless (!room.nil? && room.on?)
 
             should_post_message = ((
-                                        # (room.magic_comment && has_magic_comment?(comment, post)) ||
                                         (room.regex_match && report_text) ||
                                         toxicity >= 0.7 || # I should add a room property for this
                                         post_inactive # And this
@@ -225,13 +223,6 @@ class CommentScanner
     def report(post_type, comment_body)
       matching_regexes = report_raw(post_type, comment_body)
       return "Matched regex(es) #{matching_regexes.map { |r| r.reason.nil? ? r.regex : r.reason.name }.uniq }" unless matching_regexes.empty?
-    end
-
-    def has_magic_comment?(comment, post)
-      !comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") &&
-      post.comments.any? do |c|
-        c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31")
-      end
     end
 
     def ts_for(ts)

@@ -130,7 +130,6 @@ class MockClient
             @owner = owner 
             @last_editor = last_editor
             @closed_date = nil
-            @comments = [] #Only used for magic comment. This makes things easy
         end
 
         def json

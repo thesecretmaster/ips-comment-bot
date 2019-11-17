@@ -1,8 +1,9 @@
 require "test/unit"
 
 require_relative '../../commander'
+require_relative '../../message_collection'
 require_relative '../mock_chatter'
- 
+
 class BasicCommandsTest < Test::Unit::TestCase
     def setup
         #Give interesting names for whoami test
@@ -115,7 +116,7 @@ class BasicCommandsTest < Test::Unit::TestCase
 
         @chatter.simulate_message(@chatter.rooms[0], "!!/reports")
 
-        assert_equal("regex_match: true\nmagic_comment: false", @chatter.chats[@chatter.rooms[0]][0], "Bad reports message")
+        assert(@chatter.chats[@chatter.rooms[0]][0].include? "regex_match: true")
     end
 
     def test_whoami
