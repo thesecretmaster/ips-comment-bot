@@ -16,7 +16,7 @@ class MockChatter
         (@rooms + [@HQroom]).each do |room_id|
             r = Room.find_or_create_by(room_id: room_id) #setup defaults in db
             r.turn_on
-            r.update(regex_match: true)
+            r.update(regex_match: true, animals: true, hot_post: true, inactive_post: true, custom_report: true)
             r.save
 
             @command_actions[room_id] = {}

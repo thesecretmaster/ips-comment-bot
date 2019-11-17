@@ -50,7 +50,7 @@ class CommentScanner
     def report_hot_post(post_link, post_title, comment_num, hr_num)
         (@chatter.rooms + [@chatter.HQroom]).flatten.each do |room_id|
             room = Room.find_by(room_id: room_id)
-            next unless (room_id == @chatter.HQroom) || (!room.nil? && room.on? && room.regex_match)
+            next unless (room_id == @chatter.HQroom) || (!room.nil? && room.on? && room.hot_post)
 
             @chatter.say("**Post is currently hot!** With #{comment_num} comments in the last #{hr_num} hours: [#{post_title}](#{post_link})", room_id)
         end
@@ -199,11 +199,11 @@ class CommentScanner
             should_post_message = ((
                                         (room.regex_match && report_text) ||
                                         toxicity >= 0.7 || # I should add a room property for this
-                                        post_inactive # And this
+                                        (room.inactive_post && post_inactive)
                                     ) && should_post_matches && user &&
                                       post && !@ignore_users.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
                                       (user['user_type'] != 'moderator')
-                                  ) || custom_report
+                                  ) || (room.custom_report && custom_report)
 
             if should_post_message
                 msgs.push comment, @chatter.say(comment_text_to_post, room_id)

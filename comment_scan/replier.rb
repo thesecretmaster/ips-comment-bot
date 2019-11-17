@@ -88,6 +88,11 @@ class Replier
         ["dog", "pup", "woof", "bark", "bow-wow", "best friend"].any? { |dog_name| message.downcase.include? dog_name }
     end
 
+    def animals_on?(room_id)
+      room_id == @chatter.HQroom || Room.find_by(room_id: room_id).animals 
+    end
+
+
     def record_feedback(feedback_id, parent_id, chat_user, room_id)
         comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return false if comment.nil?
@@ -325,7 +330,7 @@ class Replier
     end
 
     def cat_mentions(msg_id, chat_user, room_id, message)
-        return false unless contains_cat(message)
+        return false unless contains_cat(message) && animals_on?(room_id)
 
         cat_response = HTTParty.post("https://aws.random.cat/meow")
         case cat_response.code
@@ -340,7 +345,7 @@ class Replier
     end
 
     def dog_mentions(msg_id, chat_user, room_id, message)
-        return false unless contains_dog(message)
+        return false unless contains_dog(message) && animals_on?(room_id)
 
         dog_response = HTTParty.get("https://dog.ceo/api/breeds/image/random")
         case dog_response.code
