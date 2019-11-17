@@ -163,7 +163,7 @@ class Commander
     def notify(room_id, bot, type, status)
         return unless matches_bot?(bot) && on?(room_id)
         if !Room.reports.key?(type)
-            @chatter.say("Type must be one of {#{Room.reports.keys.join(", ")}}")
+            @chatter.say("Type must be one of {#{Room.reports.keys.join(", ")}}", room_id)
             return
         end
         act = Room.reports[type]
