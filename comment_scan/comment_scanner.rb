@@ -181,6 +181,7 @@ class CommentScanner
         msgs = MessageCollection::ALL_ROOMS
 
         @logger.debug "Post chat message..."
+        update_ignores
 
         if @post_all_comments
             msgs.push comment, @chatter.say(comment_text_to_post)
@@ -283,6 +284,11 @@ class CommentScanner
         @perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
 
         response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
+    end
+
+    #Pull in any newly whitelisted users
+    def update_ignores
+        @ignore_users |= WhitelistedUser.all.map(&:user_id)
     end
 
 end

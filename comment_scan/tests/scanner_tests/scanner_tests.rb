@@ -126,4 +126,15 @@ class ScannerTest < Test::Unit::TestCase
         assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 1 }) #Make sure this was only reported once
     end
 
+    def test_whitelist_scan_doesnt_post
+        test_regex = 'testing123'
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot q #{test_regex} test_reason")
+        c = @client.new_comment("question", "Comment with some #{test_regex} in it.")
+        WhitelistedUser.create(user_id: c.owner.id)
+
+        @scanner.scan_new_comments
+
+        assert(@chatter.rooms.all? { |room| @chatter.chats[room].empty? })
+    end
+
 end
