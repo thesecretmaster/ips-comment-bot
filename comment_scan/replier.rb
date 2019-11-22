@@ -121,11 +121,11 @@ class Replier
 
         case feedback_id
         when FeedbackTypedef.tp
-            result_txt = "Marked this comment as caught correctly (tp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself."
+            result_txt = "Marked this comment as flaggable (tp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself."
         when FeedbackTypedef.fp
-            result_txt = "Marked this comment as caught incorrectly (fp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps"
+            result_txt = "Marked this comment as not flag-worthy (fp). Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps"
         when FeedbackTypedef.rude
-            result_txt = "Registered as rude. *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself."
+            result_txt = "Registered as rude and flaggable (tp). *beep boop* My human overlords won't let me flag that, so you'll have to do it yourself."
         end
 
         if !existing_feedback.nil? #Feedback switch
@@ -191,7 +191,7 @@ class Replier
         # If post isn't deleted, check if this was an inactive comment
         if post = @seclient.post_exists?(comment.post_id)
             if @scanner.timestamp_to_date(post.json["last_activity_date"]) < @scanner.timestamp_to_date(comment["creation_date"]) - 30
-                reason_text += "Comment was made #{(@scanner.timestamp_to_date(comment["creation_date"]) - @scanner.timestamp_to_date(post.json["last_activity_date"])).to_i} days after last activity on post\n"
+                reason_text += "\nComment was made #{(@scanner.timestamp_to_date(comment["creation_date"]) - @scanner.timestamp_to_date(post.json["last_activity_date"])).to_i} days after last activity on post\n"
             end
         end
 
