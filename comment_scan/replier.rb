@@ -30,6 +30,7 @@ class Replier
         @reply_actions["feedbacks"] = method(:feedbacks)
         @reply_actions["fp"] = method(:fp)
         @reply_actions["huh?"] = method(:huh)
+        @reply_actions["pewpew"] = method(:tp) #fun tp alias
         @reply_actions["report"] = method(:report)
         @reply_actions["rescan"] = method(:rescan)
         @reply_actions["rude"] = method(:rude)
