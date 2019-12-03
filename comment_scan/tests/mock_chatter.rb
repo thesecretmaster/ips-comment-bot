@@ -63,21 +63,25 @@ class MockChatter
         @logger.debug "Got reply with command: #{reply_command}"
         @logger.debug "Does it exist? #{@reply_actions.key?(reply_command)}"
         if @reply_actions.key?(reply_command)
-            @logger.debug @reply_actions[reply_command]
             begin
-                @reply_actions[reply_command].each do |action, args_to_pass|
+                #Run at most one reply action successfully
+                return @reply_actions[reply_command].any? do |action, args_to_pass|
                     #                         vvvvv Pass fake message id (only used for replies)
                     action.call(*args_to_pass, 666, parent_msg_id, chat_user, room_id, *reply_args)
                 end
             rescue ArgumentError => e
                 say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
                 @logger.warn e
-                #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_command_action?
+                #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_reply_action?
             rescue Exception => e
                 say("Got exception ```#{e}``` processing your response", room_id)
             end
+            return true
         else
-            #@fall_through_actions.each { |action, payload| action.call(*payload, message.id, message.hash['parent_id'], room_id, *reply_args)}
+            #@fall_through_actions.each do |action, payload|
+            #    action.call(*payload, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
+            #end
+            #return false
         end
     end
 

@@ -53,6 +53,22 @@ class  ReplierTest < Test::Unit::TestCase
         assert_equal(rudes_before, dbcomment.rude.to_i, "Comment not updated in db correctly")
     end
 
+    def test_tp_with_more_text
+        secomment = @client.new_comment("question", "I'm a new comment!")
+        @scanner.scan_new_comments
+        dbcomment = MessageCollection::ALL_ROOMS.comment_for(0) #grab that comment
+        tps_before = dbcomment.tps.to_i
+        fps_before = dbcomment.fps.to_i
+        rudes_before = dbcomment.rude.to_i
+
+        @chatter.simulate_reply(@chatter.HQroom, 0, "tp and more text!", "3333")
+
+        assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before + 1}tps/#{fps_before}fps")
+        assert_equal(tps_before + 1, dbcomment.tps.to_i, "Comment not updated in db correctly")
+        assert_equal(fps_before, dbcomment.fps.to_i, "Comment not updated in db correctly")
+        assert_equal(rudes_before, dbcomment.rude.to_i, "Comment not updated in db correctly")
+    end
+
     def test_remove_tp
         secomment = @client.new_comment("question", "I'm a new comment!")
         @scanner.scan_new_comments
