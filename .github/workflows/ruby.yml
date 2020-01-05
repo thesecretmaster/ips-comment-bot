@@ -16,5 +16,6 @@ jobs:
     - name: Run test suite
       run: |
         gem install bundler
+        yum install sqlite-devel
         bundle install --jobs 4 --retry 3
         ruby comment_scan/tests/test_master.rb
