@@ -80,26 +80,26 @@ class Chatter
         reply_command = reply_args[0]
         reply_args = reply_args.drop(1) #drop the command
 
-        if @reply_actions.key?(reply_command)
-            begin
-                #Run at most one reply action successfully
-                return @reply_actions[reply_command].any? do |action, args_to_pass|
-                    action.call(*args_to_pass, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
-                end
-            rescue ArgumentError => e
-                say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
-                @logger.warn e
-                #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_reply_action?
-            rescue Exception => e
-                say("Got exception ```#{e}``` processing your response", room_id)
-            end
-            return true
-        else
+        if !@reply_actions.key?(reply_command)
             @fall_through_actions.each do |action, payload|
                 action.call(*payload, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
             end
             return false
         end
+
+        begin
+            #Run at most one reply action successfully
+            return @reply_actions[reply_command].any? do |action, args_to_pass|
+                action.call(*args_to_pass, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
+            end
+        rescue ArgumentError => e
+            say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
+            @logger.warn e
+            #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_reply_action?
+        rescue Exception => e
+            say("Got exception ```#{e}``` processing your response", room_id)
+        end
+        return true
     end
 
     def message_received(room_id, message)

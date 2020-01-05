@@ -423,9 +423,9 @@ class Commander
                 tp_count = all_matched.count { |comment| comment.tps.to_i >= 1 }
                 fp_count = all_matched.count { |comment| comment.fps.to_i >= 1 }
 
-                {:effectivePercent => (tp_count + fp_count > 0) ? tp_count/(tp_count + fp_count).to_f : 0, 
-                    :tps => tp_count, :fps => fp_count, :totalMatched => all_matched.length, :postType => regex.post_type,
-                    :regex => regex.regex, :reason => r.name}
+                {effectivePercent: (tp_count + fp_count > 0) ? tp_count/(tp_count + fp_count).to_f : 0, 
+                    tps: tp_count, fps: fp_count, totalMatched: all_matched.length, postType: regex.post_type,
+                    regex: regex.regex, reason: r.name}
             end
         end
 

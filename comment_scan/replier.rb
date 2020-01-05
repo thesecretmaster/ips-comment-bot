@@ -113,7 +113,7 @@ class Replier
                 existing_feedback.delete
                 @chatter.say "Un-#{FeedbackTypedef.feedback_name(feedback_id)}'ed this comment. Currently marked #{comment.tps.to_i}tps/#{comment.fps.to_i}fps."
                 comment.save
-                return
+                return true
             end
         end
 

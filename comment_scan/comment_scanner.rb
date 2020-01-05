@@ -11,8 +11,8 @@ class CommentScanner
         @post_all_comments = post_all_comments
         @ignore_users = ignore_users
         @logger = logger
-        @HOT_SECONDS = hot_secs
-        @HOT_COMMENT_NUM = hot_comment_num
+        @hot_seconds = hot_secs
+        @hot_comment_num = hot_comment_num
         @perspective_key = perspective_key
         @perspective_log = perspective_log
 
@@ -38,10 +38,10 @@ class CommentScanner
             continue unless post = @seclient.post_exists?(comment.post_id) # If post was deleted, skip it
             comments_on_post = Comment.
                                     where(post_id: comment.post_id).
-                                    where("creation_date >= :date", date: Time.at(comment.creation_date - @HOT_SECONDS).to_datetime)
+                                    where("creation_date >= :date", date: Time.at(comment.creation_date - @hot_seconds).to_datetime)
 
-            if comments_on_post.count >= @HOT_COMMENT_NUM && !MessageCollection::ALL_ROOMS.hot_post_recorded?(post.id)
-                report_hot_post(post.link, post.title, comments_on_post.count, @HOT_SECONDS/60/60)
+            if comments_on_post.count >= @hot_comment_num && !MessageCollection::ALL_ROOMS.hot_post_recorded?(post.id)
+                report_hot_post(post.link, post.title, comments_on_post.count, @hot_seconds/60/60)
                 MessageCollection::ALL_ROOMS.push_hot_post(post.id)
             end
         end

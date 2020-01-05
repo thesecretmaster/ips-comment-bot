@@ -1,6 +1,6 @@
 class MessageCollection
   def initialize
-    self.clear
+    clear
   end
 
   def clear #Clear/reset everything
@@ -10,7 +10,8 @@ class MessageCollection
   end
 
   def push_hot_post(post_id)
-    @hotposts.push(post_id)
+    @hotposts.unshift(post_id)
+    @hotposts = @hotposts[0..9] #Ensure we don't store more than 10 hot posts
     @hotposts.shift if @hotposts.length > 10 #remove first hot_post
     @hotposts
   end
