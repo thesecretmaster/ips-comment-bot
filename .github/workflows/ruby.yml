@@ -15,4 +15,5 @@ jobs:
         ruby-version: 2.6.x
     - name: Run test suite
       run: |
+        bundle install
         ruby comment_scan/tests/test_master.rb
