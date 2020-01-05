@@ -171,7 +171,7 @@ class CommentScanner
 
         @logger.debug "Check reasons..."
 
-        report_text = custom_report ? custom_text : report(comment["post_type"], comment["body_markdown"])
+        report_text = custom_report ? custom_text : regex_report(comment["post_type"], comment["body_markdown"])
         reasons = report_raw(comment["post_type"], comment["body_markdown"]).map(&:reason)
 
         if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
@@ -183,11 +183,11 @@ class CommentScanner
         @logger.debug "Post chat message..."
         update_ignores
 
-        if @post_all_comments
+        if @post_all_comments && !custom_report
             msgs.push comment, @chatter.say(comment_text_to_post)
             msgs.push comment, @chatter.say(msg)
             msgs.push comment, @chatter.say(report_text) if report_text
-        elsif !@post_all_comments && (report_text) && (post && !@ignore_users.map(&:to_i).push(post.owner.id).flatten.include?(user.user_id.to_i))
+        elsif !@post_all_comments && (report_text) && !custom_report && (post && !@ignore_users.map(&:to_i).push(post.owner.id).flatten.include?(user.user_id.to_i))
             msgs.push comment, @chatter.say(comment_text_to_post)
             msgs.push comment, @chatter.say(msg)
             msgs.push comment, @chatter.say(report_text) if report_text
@@ -221,7 +221,7 @@ class CommentScanner
       end
     end
 
-    def report(post_type, comment_body)
+    def regex_report(post_type, comment_body)
       matching_regexes = report_raw(post_type, comment_body)
       return "Matched regex(es) #{matching_regexes.map { |r| r.reason.nil? ? r.regex : r.reason.name }.uniq }" unless matching_regexes.empty?
     end

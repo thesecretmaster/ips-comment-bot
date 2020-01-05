@@ -215,6 +215,8 @@ class Replier
     end
 
     def report(msg_id, parent_id, chat_user, room_id, *report_reason)
+        return false if room_id != @chatter.HQroom
+
         db_comment = MessageCollection::ALL_ROOMS.comment_for(parent_id.to_i)
         return false if db_comment.nil?
 
@@ -222,6 +224,7 @@ class Replier
             @chatter.say("Comment with id #{db_comment["comment_id"]} was deleted and cannot be reported.", room_id)
         else
             @scanner.custom_report(db_comment, "Reported with custom reason: \"#{report_reason.join(' ')}\" by #{chat_user.name}")
+            @chatter.say("Successfully reported comment ##{db_comment["comment_id"]} with custom reason \"#{report_reason.join(' ')}\"")
         end
         return true
     end
