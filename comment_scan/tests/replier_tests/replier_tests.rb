@@ -125,7 +125,7 @@ class  ReplierTest < Test::Unit::TestCase
         @chatter.simulate_reply(@chatter.HQroom, 0, "report #{custom_reason}")
 
         #Two extra here for the initial report
-        assert_equal(5, @chatter.chats[@chatter.HQroom].length, "Incorrect number of messages posted to HQ")
+        assert_equal(4, @chatter.chats[@chatter.HQroom].length, "Incorrect number of messages posted to HQ")
         @chatter.rooms.each do |room_id|
             assert_equal(3, @chatter.chats[room_id].length, "Incorrect number of messages posted to child room")
         end
