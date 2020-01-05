@@ -8,14 +8,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Ruby 2.6
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Setup System
+      run: |
+        sudo apt-get install libsqlite3-dev
+    - name: Setup Ruby 2.6
       uses: actions/setup-ruby@v1
       with:
         ruby-version: 2.6.x
-    - name: Run test suite
+    - name: Bundle
       run: |
         gem install bundler
-        sudo apt-get install libsqlite3-dev
         bundle install --jobs 4 --retry 3
+    - name: Test
         ruby comment_scan/tests/test_master.rb
