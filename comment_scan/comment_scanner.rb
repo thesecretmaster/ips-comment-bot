@@ -48,7 +48,7 @@ class CommentScanner
     end
 
     def report_hot_post(post_link, post_title, comment_num, hr_num)
-        (@chatter.rooms + [@chatter.HQroom]).flatten.each do |room_id|
+        (@chatter.rooms + [@chatter.HQroom]).each do |room_id|
             room = Room.find_by(room_id: room_id)
             next unless (room_id == @chatter.HQroom) || (!room.nil? && room.on? && room.hot_post)
 
