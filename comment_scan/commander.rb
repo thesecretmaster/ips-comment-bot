@@ -334,9 +334,15 @@ class Commander
             return
         end
 
-        matched_comments = Comment.where(post_type: comment_type).count { |comment| %r{#{regex}}.match(comment.body_markdown.downcase) }
-        if matched_comments < 10
-            @chatter.say("**WARNING:** Regex only matched #{matched_comments} comments curently in the db. You should probably check your regex.")
+        min_valid_amount = 10
+        num_matched = 0
+        Comment.where(post_type: comment_type).each do |comment|
+            num_matched += 1 if %r{#{regex.regex}}.match? comment.body_markdown.downcase
+            break if num_matched > min_valid_amount
+        end
+
+        if num_matched < min_valid_amount
+            @chatter.say("**WARNING:** Regex only matched #{num_matched} comments curently in the db. You should probably check your regex.")
         end
 
         if reason = Reason.find_or_create_by(name: reason.join(' '))

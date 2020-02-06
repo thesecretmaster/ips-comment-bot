@@ -36,9 +36,9 @@ class CommentScanner
         #Only check each post once, so make unique by post ID
         new_comments.flatten.uniq(&:post_id).each do |comment|
             continue unless post = @seclient.post_exists?(comment.post_id) # If post was deleted, skip it
-            comments_on_post = Comment.
-                                    where(post_id: comment.post_id).
-                                    where("creation_date >= :date", date: Time.at(comment.creation_date - @hot_seconds).to_datetime)
+            comments_on_post = Comment
+                                    .where(post_id: comment.post_id)
+                                    .where("creation_date >= :date", date: Time.at(comment.creation_date - @hot_seconds).to_datetime)
 
             if comments_on_post.count >= @hot_comment_num && !MessageCollection::ALL_ROOMS.hot_post_recorded?(post.id)
                 report_hot_post(post.link, post.title, comments_on_post.count, @hot_seconds/60/60)
