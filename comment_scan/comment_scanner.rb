@@ -4,12 +4,15 @@ require_relative 'message_collection'
 class CommentScanner
     attr_reader :seclient, :chatter, :time_to_scan
 
-    def initialize(seclient, chatter, post_all_comments, ignore_users, logger, perspective_key: '', perspective_log: Logger.new('/dev/null'))
+    def initialize(seclient, chatter, post_all_comments, ignore_users, logger, hot_secs: 10800, 
+                    hot_comment_num: 10, perspective_key: '', perspective_log: Logger.new('/dev/null'))
         @seclient = seclient
         @chatter = chatter
         @post_all_comments = post_all_comments
         @ignore_users = ignore_users
         @logger = logger
+        @hot_seconds = hot_secs
+        @hot_comment_num = hot_comment_num
         @perspective_key = perspective_key
         @perspective_log = perspective_log
 
@@ -21,11 +24,36 @@ class CommentScanner
         new_comments = @seclient.comments_after_date(@latest_comment_date)
         @latest_comment_date = new_comments[0].json["creation_date"].to_i+1 if new_comments.any? && !new_comments[0].nil?
         scan_se_comments([new_comments])
+        check_for_hot_post([new_comments])
     end
 
     def tick
         (@time_to_scan = 60; return false) if (@time_to_scan -= 1) <= 0
         return true
+    end
+
+    def check_for_hot_post(new_comments)
+        #Only check each post once, so make unique by post ID
+        new_comments.flatten.uniq(&:post_id).each do |comment|
+            continue unless post = @seclient.post_exists?(comment.post_id) # If post was deleted, skip it
+            comments_on_post = Comment
+                                    .where(post_id: comment.post_id)
+                                    .where("creation_date >= :date", date: Time.at(comment.creation_date - @hot_seconds).to_datetime)
+
+            if comments_on_post.count >= @hot_comment_num && !MessageCollection::ALL_ROOMS.hot_post_recorded?(post.id)
+                report_hot_post(post.link, post.title, comments_on_post.count, @hot_seconds/60/60)
+                MessageCollection::ALL_ROOMS.push_hot_post(post.id)
+            end
+        end
+    end
+
+    def report_hot_post(post_link, post_title, comment_num, hr_num)
+        (@chatter.rooms + [@chatter.HQroom]).each do |room_id|
+            room = Room.find_by(room_id: room_id)
+            next unless (room_id == @chatter.HQroom) || (!room.nil? && room.on? && room.hot_post)
+
+            @chatter.say("**Post is currently hot!** With #{comment_num} comments in the last #{hr_num} hours: [#{post_title}](#{post_link})", room_id)
+        end
     end
 
     def scan_comments_from_db(*comment_ids)
@@ -129,7 +157,6 @@ class CommentScanner
 
         @logger.debug "Building message..."
         msg += " | Toxicity #{toxicity}"
-        # msg += " | Has magic comment" if !post_exists?(cli, comment["post_id"]) and has_magic_comment? comment, post
         msg += " | High toxicity" if toxicity >= 0.7
         msg += " | Comment on inactive post" if post_inactive
         msg += " | tps/fps: #{comment["tps"].to_i}/#{comment["fps"].to_i}"
@@ -144,7 +171,7 @@ class CommentScanner
 
         @logger.debug "Check reasons..."
 
-        report_text = custom_report ? custom_text : report(comment["post_type"], comment["body_markdown"])
+        report_text = custom_report ? custom_text : regex_report(comment["post_type"], comment["body_markdown"])
         reasons = report_raw(comment["post_type"], comment["body_markdown"]).map(&:reason)
 
         if reasons.map(&:name).include?('abusive') || reasons.map(&:name).include?('offensive')
@@ -154,12 +181,13 @@ class CommentScanner
         msgs = MessageCollection::ALL_ROOMS
 
         @logger.debug "Post chat message..."
+        update_ignores
 
-        if @post_all_comments
+        if @post_all_comments && !custom_report
             msgs.push comment, @chatter.say(comment_text_to_post)
             msgs.push comment, @chatter.say(msg)
             msgs.push comment, @chatter.say(report_text) if report_text
-        elsif !@post_all_comments && (report_text) && (post && !@ignore_users.map(&:to_i).push(post.owner.id).flatten.include?(user.user_id.to_i))
+        elsif !@post_all_comments && (report_text) && !custom_report && (post && !@ignore_users.map(&:to_i).push(post.owner.id).flatten.include?(user.user_id.to_i))
             msgs.push comment, @chatter.say(comment_text_to_post)
             msgs.push comment, @chatter.say(msg)
             msgs.push comment, @chatter.say(report_text) if report_text
@@ -170,14 +198,13 @@ class CommentScanner
             next unless (!room.nil? && room.on?)
 
             should_post_message = ((
-                                        # (room.magic_comment && has_magic_comment?(comment, post)) ||
                                         (room.regex_match && report_text) ||
                                         toxicity >= 0.7 || # I should add a room property for this
-                                        post_inactive # And this
+                                        (room.inactive_post && post_inactive)
                                     ) && should_post_matches && user &&
                                       post && !@ignore_users.map(&:to_i).push(post.owner.id).map(&:to_i).include?(user["user_id"].to_i) &&
                                       (user['user_type'] != 'moderator')
-                                  ) || custom_report
+                                  ) || (room.custom_report && custom_report)
 
             if should_post_message
                 msgs.push comment, @chatter.say(comment_text_to_post, room_id)
@@ -194,16 +221,9 @@ class CommentScanner
       end
     end
 
-    def report(post_type, comment_body)
+    def regex_report(post_type, comment_body)
       matching_regexes = report_raw(post_type, comment_body)
       return "Matched regex(es) #{matching_regexes.map { |r| r.reason.nil? ? r.regex : r.reason.name }.uniq }" unless matching_regexes.empty?
-    end
-
-    def has_magic_comment?(comment, post)
-      !comment.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31") &&
-      post.comments.any? do |c|
-        c.body_markdown.include?("https://interpersonal.meta.stackexchange.com/q/1644/31")
-      end
     end
 
     def ts_for(ts)
@@ -264,6 +284,11 @@ class CommentScanner
         @perspective_log.info response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
 
         response.dig("attributeScores", "TOXICITY", "summaryScore", "value")
+    end
+
+    #Pull in any newly whitelisted users
+    def update_ignores
+        @ignore_users |= WhitelistedUser.all.map(&:user_id)
     end
 
 end

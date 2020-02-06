@@ -8,7 +8,7 @@ class MockClient
         @comments = {}
         @posts = {}
         @users = {}
-        @last_creation_date = Date.new(2000,1,1).to_time #Make things easy...go back to a simpler time
+        @last_creation_date = Time.new(2000,1,1).to_i #Make things easy...go back to a simpler time
         @last_id = 1
     end
 
@@ -42,7 +42,7 @@ class MockClient
         @comments[@comments.keys.max{ |key| key.to_i }].creation_date
     end
 
-    def new_comment(post_type, body)
+    def new_comment(post_type, body, post_id: nil)
         @last_creation_date += 1 #Newer!
 
         biggest_post = @posts.any? ? @posts.keys.max : 0
@@ -53,7 +53,7 @@ class MockClient
         post_owner = new_user(biggest_user + 2)
         last_editor = new_user(biggest_user + 3)
 
-        parent_post = new_post(biggest_post + 1, Date.new(2000, 1, 1).to_time, post_type, post_owner, last_editor)
+        parent_post = post_id.nil? ? new_post(biggest_post + 1, Date.new(2000, 1, 1).to_time, post_type, post_owner, last_editor) : @posts[post_id]
 
         @comments[(biggest_comment+1).to_s] = MockComment.new(biggest_comment + 1, @last_creation_date, parent_post.id, post_type, body, comment_owner)
 
@@ -130,7 +130,6 @@ class MockClient
             @owner = owner 
             @last_editor = last_editor
             @closed_date = nil
-            @comments = [] #Only used for magic comment. This makes things easy
         end
 
         def json

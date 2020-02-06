@@ -27,6 +27,7 @@ class ScannerTest < Test::Unit::TestCase
     def teardown
         #Wipe test_db after test
         wipe_db
+        MessageCollection::ALL_ROOMS.clear
     end
 
     def test_scan_question_comment
@@ -79,8 +80,8 @@ class ScannerTest < Test::Unit::TestCase
 
         @scanner.scan_new_comments
 
-        #           vvv  4 here because the !!/add command will generate 1
-        assert_equal(4, @chatter.chats[@chatter.HQroom].length, "Regex match was not posted to HQroom")
+        #           vvv  5 here because the !!/add command will generate 2
+        assert_equal(5, @chatter.chats[@chatter.HQroom].length, "Regex match was not posted to HQroom")
         assert(@chatter.chats[@chatter.HQroom][-1].include?(test_reason))
         assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 3 }) #Make sure comment *was* posted to other rooms
     end
@@ -95,10 +96,45 @@ class ScannerTest < Test::Unit::TestCase
 
         @scanner.scan_comment_from_db(dbcomment.id)
 
-        #           vvv  4 here because the !!/add command will generate 1
-        assert_equal(4, @chatter.chats[@chatter.HQroom].length, "Regex match was not posted to HQroom")
+        #           vvv  5 here because the !!/add command will generate 2
+        assert_equal(5, @chatter.chats[@chatter.HQroom].length, "Regex match was not posted to HQroom")
         assert(@chatter.chats[@chatter.HQroom][-1].include?(test_reason))
         assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 0 }) #Make sure comment wasn't posted to other rooms
+    end
+
+    def test_hot_post
+        first_comment = @client.new_comment("question", "I'm the first comment!")
+        post_id = first_comment.post_id
+        [*1..15].each { |num| @client.new_comment("question", "I'm a new comment ##{num}!", post_id: post_id) }
+
+        @scanner.scan_new_comments
+
+        assert((@chatter.rooms + [@chatter.HQroom]).all? { |room| @chatter.chats[room][-1].include?("currently hot")})
+        assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 1 }) #Make sure this was only reported once
+    end
+
+    def test_hot_post_doesnt_double
+        first_comment = @client.new_comment("question", "I'm the first comment!")
+        post_id = first_comment.post_id
+        [*1..15].each { |num| @client.new_comment("question", "I'm a new comment ##{num}!", post_id: post_id) }
+        @scanner.scan_new_comments #Should generate "hot post" message
+        @client.new_comment("question", "I'm the newest comment", post_id: post_id)
+
+        @scanner.scan_new_comments #Shouldn't generate another "hot post" message
+
+        assert(@chatter.rooms.all? { |room| @chatter.chats[room][-1].include?("currently hot")})
+        assert(@chatter.rooms.all? { |room| @chatter.chats[room].length == 1 }) #Make sure this was only reported once
+    end
+
+    def test_whitelist_scan_doesnt_post
+        test_regex = 'testing123'
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot q #{test_regex} test_reason")
+        c = @client.new_comment("question", "Comment with some #{test_regex} in it.")
+        WhitelistedUser.create(user_id: c.owner.id)
+
+        @scanner.scan_new_comments
+
+        assert(@chatter.rooms.all? { |room| @chatter.chats[room].empty? })
     end
 
 end

@@ -34,9 +34,13 @@ end
 
 master_logger = Logger.new(STDOUT, level: Logger::DEBUG, formatter: log_formatter)
 
-chatter = Chatter.new(settings["ChatXUsername"], settings["ChatXPassword"], settings["hq_room_id"].to_i, master_logger, settings["rooms"])
+chatter = Chatter.new(settings["ChatXUsername"], settings["ChatXPassword"], 
+                        settings["hq_room_id"].to_i, master_logger, settings["rooms"])
 seclient = SEClient.new(settings["APIKey"], settings["site"], master_logger)
-scanner = CommentScanner.new(seclient, chatter, settings["all_comments"], ignore_users, master_logger, perspective_key: settings['perspective_key'], perspective_log: Logger.new('perspective.log'))
+scanner = CommentScanner.new(seclient, chatter, settings["all_comments"], ignore_users,
+                                master_logger, hot_secs: settings["hot_seconds"], hot_comment_num: settings["hot_comment_num"],
+                                perspective_key: settings['perspective_key'],
+                                perspective_log: Logger.new('perspective.log'))
 commander = Commander.new(chatter, seclient, scanner, bot_names, master_logger)
 replier = Replier.new(chatter, seclient, scanner, bot_names, master_logger)
 

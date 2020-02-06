@@ -21,7 +21,8 @@ class Chatter
         @mention_actions = [] 
         @fall_through_actions = [] 
 
-        #TODO: mention_received logic will be run alongside both command and reply logic. Going to need to fix this at some point
+        #Note: mention_received logic will be run alongside command logic.
+        #       Since they're run in threads, it'll be hard to prevent that 
         (@rooms + [@HQroom]).each do |room_id|
             @command_actions[room_id] = {}
 
@@ -30,12 +31,20 @@ class Chatter
             end
 
             @chatbot.add_hook(room_id, 'reply') do |message|
-                reply_received(room_id, message)
-                mention_received(room_id, message) #Treat replies as mentions
+                #Grab/create/update chat user
+                chat_user = ChatUser.find_or_create_by(user_id: message.hash['user_id'])
+                chat_user.update(name: message.hash['user_name'])
+
+                #Treat replies as mentions, but only run if no reply actions were hit
+                reply_received(room_id, chat_user, message) || mention_received(room_id, chat_user, message)
             end
 
             @chatbot.add_hook(room_id, 'mention') do |message|
-                mention_received(room_id, message)
+                #Grab/create/update chat user
+                chat_user = ChatUser.find_or_create_by(user_id: message.hash['user_id'])
+                chat_user.update(name: message.hash['user_name'])
+
+                mention_received(room_id, chat_user, message)
             end
         end
     end
@@ -56,35 +65,41 @@ class Chatter
         @fall_through_actions.push([action, args_to_pass])
     end
 
-    def mention_received(room_id, message)
-        @mention_actions.each do |action, payload|
-            action.call(*payload, message.id, room_id, message.body)
+    def mention_received(room_id, chat_user, message)
+        #Run at most one mention action successfully
+        @mention_actions.any? do |action, payload|
+            action.call(*payload, message.id, chat_user, room_id, message.body)
         end
     end
 
-    def reply_received(room_id, message)
+    def reply_received(room_id, chat_user, message)
         return unless message.hash.include? 'parent_id'
 
         reply_args = message.body.downcase.split(' ').drop(1) #Remove the reply portion
-        return if reply_args.empty? #No args
+        return false if reply_args.empty? #No args
         reply_command = reply_args[0]
         reply_args = reply_args.drop(1) #drop the command
 
-        if @reply_actions.key?(reply_command)
-            begin
-                @reply_actions[reply_command].each do |action, args_to_pass|
-                    action.call(*args_to_pass, message.id, message.hash['parent_id'], room_id, *reply_args)
-                end
-            rescue ArgumentError => e
-                say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
-                @logger.warn e
-                #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_command_action?
-            rescue Exception => e
-                say("Got exception ```#{e}``` processing your response", room_id)
+        if !@reply_actions.key?(reply_command)
+            @fall_through_actions.each do |action, payload|
+                action.call(*payload, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
             end
-        else
-            @fall_through_actions.each { |action, payload| action.call(*payload, message.id, message.hash['parent_id'], room_id, *reply_args)}
+            return false
         end
+
+        begin
+            #Run at most one reply action successfully
+            return @reply_actions[reply_command].any? do |action, args_to_pass|
+                action.call(*args_to_pass, message.id, message.hash['parent_id'], chat_user, room_id, *reply_args)
+            end
+        rescue ArgumentError => e
+            say("Invalid number of arguments for '#{reply_command[0]}' command.", room_id)
+            @logger.warn e
+            #TODO: Would be cool to have some help text print here. Maybe we could pass it when we do add_reply_action?
+        rescue Exception => e
+            say("Got exception ```#{e}``` processing your response", room_id)
+        end
+        return true
     end
 
     def message_received(room_id, message)
@@ -106,6 +121,12 @@ class Chatter
 
     def say(message, room=@HQroom)
         @chatbot.say(message, room)
+    end
+
+    #A "ping" is any @ followed by 3+ word characters
+    def say_pingless(message, room=@HQroom)
+        #Replace all ping @'s with *'s
+        say(message.gsub(/\@(\w{3})/, '*\1'), room)
     end
 
     def delete(message_id)

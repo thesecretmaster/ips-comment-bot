@@ -23,6 +23,7 @@ class WhitelistTest < Test::Unit::TestCase
     def teardown
         #Wipe test_db after test
         wipe_db
+        MessageCollection::ALL_ROOMS.clear
     end
 
     def test_single_user_add_whitelist

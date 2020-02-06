@@ -34,6 +34,7 @@ class  ReplierTest < Test::Unit::TestCase
     def teardown
         #Wipe test_db after test
         wipe_db
+        MessageCollection::ALL_ROOMS.clear
     end
 
     def test_tp
@@ -44,13 +45,66 @@ class  ReplierTest < Test::Unit::TestCase
         fps_before = dbcomment.fps.to_i
         rudes_before = dbcomment.rude.to_i
 
-        @chatter.simulate_reply(@chatter.HQroom, 0, "tp")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "tp", "3333")
 
         assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before + 1}tps/#{fps_before}fps")
         assert_equal(tps_before + 1, dbcomment.tps.to_i, "Comment not updated in db correctly")
         assert_equal(fps_before, dbcomment.fps.to_i, "Comment not updated in db correctly")
         assert_equal(rudes_before, dbcomment.rude.to_i, "Comment not updated in db correctly")
     end
+
+    def test_tp_with_more_text
+        secomment = @client.new_comment("question", "I'm a new comment!")
+        @scanner.scan_new_comments
+        dbcomment = MessageCollection::ALL_ROOMS.comment_for(0) #grab that comment
+        tps_before = dbcomment.tps.to_i
+        fps_before = dbcomment.fps.to_i
+        rudes_before = dbcomment.rude.to_i
+
+        @chatter.simulate_reply(@chatter.HQroom, 0, "tp and more text!", "3333")
+
+        assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before + 1}tps/#{fps_before}fps")
+        assert_equal(tps_before + 1, dbcomment.tps.to_i, "Comment not updated in db correctly")
+        assert_equal(fps_before, dbcomment.fps.to_i, "Comment not updated in db correctly")
+        assert_equal(rudes_before, dbcomment.rude.to_i, "Comment not updated in db correctly")
+    end
+
+    def test_remove_tp
+        secomment = @client.new_comment("question", "I'm a new comment!")
+        @scanner.scan_new_comments
+        dbcomment = MessageCollection::ALL_ROOMS.comment_for(0) #grab that comment
+
+        tps_before = dbcomment.tps.to_i
+        fps_before = dbcomment.fps.to_i
+        rudes_before = dbcomment.rude.to_i
+
+        @chatter.simulate_reply(@chatter.HQroom, 0, "tp", "8888")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "tp", "8888")
+
+        assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before}tps/#{fps_before}fps")
+        assert_equal(tps_before, dbcomment.tps.to_i, "Comment not updated in db correctly")
+        assert_equal(fps_before, dbcomment.fps.to_i, "Comment not updated in db correctly")
+        assert_equal(rudes_before, dbcomment.rude.to_i, "Comment not updated in db correctly")
+    end
+
+    def test_switch_tp_to_fp
+        secomment = @client.new_comment("question", "I'm a new comment!")
+        @scanner.scan_new_comments
+        dbcomment = MessageCollection::ALL_ROOMS.comment_for(0) #grab that comment
+
+        tps_before = dbcomment.tps.to_i
+        fps_before = dbcomment.fps.to_i
+        rudes_before = dbcomment.rude.to_i
+
+        @chatter.simulate_reply(@chatter.HQroom, 0, "tp", "9999")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "fp", "9999")
+
+        assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before}tps/#{fps_before + 1}fps")
+        assert_equal(tps_before, dbcomment.tps.to_i, "Comment not updated in db correctly")
+        assert_equal(fps_before + 1, dbcomment.fps.to_i, "Comment not updated in db correctly")
+        assert_equal(rudes_before, dbcomment.rude.to_i, "Comment not updated in db correctly")
+    end
+
 
     def test_fp
         secomment = @client.new_comment("question", "I'm a new comment!")
@@ -60,7 +114,7 @@ class  ReplierTest < Test::Unit::TestCase
         fps_before = dbcomment.fps.to_i
         rudes_before = dbcomment.rude.to_i
 
-        @chatter.simulate_reply(@chatter.HQroom, 0, "fp")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "fp", "4444")
 
         assert(@chatter.chats[@chatter.HQroom][-1].include? "#{tps_before}tps/#{fps_before + 1}fps")
         assert_equal(tps_before, dbcomment.tps.to_i, "Comment not updated in db correctly")
@@ -76,7 +130,7 @@ class  ReplierTest < Test::Unit::TestCase
         fps_before = dbcomment.fps.to_i
         rudes_before = dbcomment.rude.to_i
 
-        @chatter.simulate_reply(@chatter.HQroom, 0, "rude")
+        @chatter.simulate_reply(@chatter.HQroom, 0, "rude", "5555")
 
         assert(@chatter.chats[@chatter.HQroom][-1].include? "rude")
         assert_equal(tps_before + 1, dbcomment.tps.to_i, "Comment not updated in db correctly")
@@ -110,8 +164,8 @@ class  ReplierTest < Test::Unit::TestCase
 
         @chatter.simulate_reply(@chatter.HQroom, 0, "rescan")
 
-        #One extra here for adding the regex
-        assert_equal(7, @chatter.chats[@chatter.HQroom].length, "Incorrect number of messages posted to HQ")
+        #Two extra here for adding the regex
+        assert_equal(8, @chatter.chats[@chatter.HQroom].length, "Incorrect number of messages posted to HQ")
         @chatter.rooms.each do |room_id|
             assert_equal(6, @chatter.chats[room_id].length, "Incorrect number of messages posted to child room")
         end
@@ -124,15 +178,41 @@ class  ReplierTest < Test::Unit::TestCase
 
         @chatter.simulate_reply(@chatter.HQroom, 0, "report #{custom_reason}")
 
-        #Two extra here for the initial report
-        assert_equal(5, @chatter.chats[@chatter.HQroom].length, "Incorrect number of messages posted to HQ")
+        #Two for the initial report + one for confirmation
+        assert_equal(3, @chatter.chats[@chatter.HQroom].length, "Incorrect number of messages posted to HQ")
         @chatter.rooms.each do |room_id|
             assert_equal(3, @chatter.chats[room_id].length, "Incorrect number of messages posted to child room")
         end
 
+        assert(@chatter.chats[@chatter.HQroom][-1].include? "Successfully reported")
         (@chatter.rooms + [@chatter.HQroom]).each do |room_id|
             assert(@chatter.chats[room_id][-1].include? custom_reason)
         end
+    end
+
+    def test_custom_report_doesnt_run_in_children
+        test_regex = "blargl"
+        test_reason = "blargl_reason"
+        test_body = "I'm a #{test_regex} comment"
+        @chatter.simulate_message(@chatter.HQroom, "!!/add testbot q #{test_regex} #{test_reason}") 
+
+        secomment = @client.new_comment("question", "I'm a new #{test_regex} comment!")
+        @scanner.scan_new_comments
+        custom_reason = "testing things"
+
+        @chatter.simulate_reply(@chatter.rooms[0], 0, "report #{custom_reason}")
+
+        #Two for setting up regex, three for reporting comment
+        assert_equal(5, @chatter.chats[@chatter.HQroom].length, "Incorrect number of messages posted to HQ")
+        @chatter.rooms.each do |room_id|
+            #Three here for reporting the comment, shouldn't see anything for report
+            assert_equal(3, @chatter.chats[room_id].length, "Incorrect number of messages posted to child room")
+        end
+
+        (@chatter.rooms + [@chatter.HQroom]).each do |room_id|
+            assert(!(@chatter.chats[room_id][-1].include? custom_reason))
+        end
+
     end
 
 end

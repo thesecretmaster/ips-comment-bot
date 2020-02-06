@@ -14,37 +14,37 @@ class Commander
         @basic_commands = {}
         @HQ_commands = {}
 
-        @basic_commands["!!/whoami"] = method(:whoami)
         @basic_commands["!!/alive"] = method(:alive)
-        @basic_commands["!!/on"] = method(:on)
-        @basic_commands["!!/off"] = method(:off)
-        @basic_commands["!!/mode"] = method(:mode)
         @basic_commands["!!/help"] = method(:help)
+        @basic_commands["!!/mode"] = method(:mode)
         @basic_commands["!!/notify"] = method(:notify)
+        @basic_commands["!!/off"] = method(:off)
+        @basic_commands["!!/on"] = method(:on)
         @basic_commands["!!/reports"] = method(:reports)
+        @basic_commands["!!/whoami"] = method(:whoami)
 
-        @HQ_commands["!!/whitelist"] = method(:whitelistuser)
-        @HQ_commands["!!/unwhitelist"] = method(:unwhitelistuser)
-        @HQ_commands["!!/whitelisted"] = method(:whitelisted)
-        @HQ_commands["!!/quota"] = method(:quota)
-        @HQ_commands["!!/uptime"] = method(:uptime)
-        @HQ_commands["!!/logsize"] = method(:logsize)
-        @HQ_commands["!!/howmany"] = method(:howmany)
-        @HQ_commands["!!/test"] = method(:test)
-        @HQ_commands["!!/howgood"] = method(:howgood)
-        @HQ_commands["!!/del"] = method(:del)
-        @HQ_commands["!!/add"] = method(:add)
+        @HQ_commands["!!/add"] = method(:add_regex)
         @HQ_commands["!!/cid"] = method(:cid)
-        @HQ_commands["!!/pull"] = method(:pull)
-        @HQ_commands["!!/master"] = method(:master)
-        @HQ_commands["!!/restart"] = method(:restart)
+        @HQ_commands["!!/del"] = method(:del_regex)
+        @HQ_commands["!!/howgood"] = method(:howgood)
+        @HQ_commands["!!/howmany"] = method(:howmany)
         @HQ_commands["!!/kill"] = method(:kill)
-        @HQ_commands["!!/rev"] = method(:rev)
-        @HQ_commands["!!/manscan"] = method(:manscan)
-        @HQ_commands["!!/ttscan"] = method(:ttscan)
         @HQ_commands["!!/last"] = method(:last)
+        @HQ_commands["!!/logsize"] = method(:logsize)
+        @HQ_commands["!!/manscan"] = method(:manscan)
+        @HQ_commands["!!/master"] = method(:master)
+        @HQ_commands["!!/pull"] = method(:pull)
+        @HQ_commands["!!/quota"] = method(:quota)
         @HQ_commands["!!/regexes"] = method(:regexes)
         @HQ_commands["!!/regexstats"] = method(:regexstats)
+        @HQ_commands["!!/restart"] = method(:restart)
+        @HQ_commands["!!/rev"] = method(:rev)
+        @HQ_commands["!!/test"] = method(:test)
+        @HQ_commands["!!/ttscan"] = method(:ttscan)
+        @HQ_commands["!!/unwhitelist"] = method(:unwhitelistuser)
+        @HQ_commands["!!/uptime"] = method(:uptime)
+        @HQ_commands["!!/whitelist"] = method(:whitelistuser)
+        @HQ_commands["!!/whitelisted"] = method(:whitelisted)
 
         @start_time = Time.now
     end
@@ -74,14 +74,15 @@ class Commander
     end
 
     def on?(room_id)
+        @logger.debug "Checking if #{room_id} is on: #{isHQ?(room_id) || Room.find_by(room_id: room_id).on?}" 
         isHQ?(room_id) || Room.find_by(room_id: room_id).on?
     end
 
     def restart_bot(num_to_post, bundle)
         if bundle == "true"
-            say "Updating bundle..."
+            @chatter.say "Updating bundle..."
             log = `bundle install`
-            say "Update complete!\n#{"="*32}\n#{log}"
+            @chatter.say "Update complete!\n#{"="*32}\n#{log}"
         end
         Kernel.exec("bundle exec ruby comment_scan.rb #{num_to_post.nil? ? @post_on_startup : num_to_post.to_i}")
     end
@@ -123,7 +124,7 @@ class Commander
 
     def on(room_id, bot='*')
         return unless matches_bot?(bot)
-        if Room.find_by(roome_id: room_id).on?
+        if Room.find_by(room_id: room_id).on?
             @chatter.say("I'm already on, silly", room_id)
         else
             @chatter.say("Turning on...", room_id)
@@ -161,13 +162,11 @@ class Commander
 
     def notify(room_id, bot, type, status)
         return unless matches_bot?(bot) && on?(room_id)
-        actions = { "regex" => :regex_match,
-                     "magic" => :magic_comment}
-        if !actions.key?(type)
-            @chatter.say("Type must be one of {#{actions.keys.join(", ")}}")
+        if !Room.reports.key?(type)
+            @chatter.say("Type must be one of {#{Room.reports.keys.join(", ")}}", room_id)
             return
         end
-        act = actions[type]
+        act = Room.reports[type]
 
         if !["on", "off"].include? status
             @chatter.say("Status must be one of {on, off}")
@@ -175,14 +174,14 @@ class Commander
         end
         status = {"on" => true, "off" => false}[status]
 
-        @chatter.say("I #{status ? "will" : "won't"} notify you on a #{act}", room_id) unless status.nil? || act.nil?
-        Room.find_by(room_id: room_id).update(**{act => status}) unless status.nil? || act.nil?
+        @chatter.say("I #{status ? "will" : "won't"} notify you on a #{act}.", room_id)
+        Room.find_by(room_id: room_id).update(**{act => status})
     end
 
     def reports(room_id, bot='*')
-        return unless matches_bot?(bot) && !on?(room_id)
+        return unless matches_bot?(bot) && on?(room_id)
         room = Room.find_by(room_id: room_id)
-        @chatter.say("regex_match: #{!!room.regex_match}\nmagic_comment: #{!!room.magic_comment}", room_id)
+        @chatter.say(Room.reports.map { |name, action| "#{action}: #{!!room.send(action)}" }.join("\n"), room_id)
     end
 
     def whitelistuser(room_id, bot, *uids)
@@ -301,7 +300,7 @@ class Commander
         msgs.push_howgood [regex, type], (@chatter.say("    #{final_output}", room_id))
     end
 
-    def del(room_id, bot, type, regex)
+    def del_regex(room_id, bot, type, regex)
         return unless matches_bot?(bot)
         if r = Regex.find_by(post_type: type[0], regex: regex)
             reas_id = r["reason_id"]
@@ -318,12 +317,14 @@ class Commander
 
     end
 
-    def add(room_id, bot, type, regex, *reason)
+    def add_regex(room_id, bot, type, regex, *reason)
         return unless matches_bot?(bot)
-        if !["q", "a"].include? type
-            commands.chatter.say("Type must be one of {q, a}", room_id)
-            return
-        end
+
+        return @chatter.say("Reason cannot be empty.", room_id) if reason.nil? || reason.empty?
+
+        return @chatter.say("Type must be one of {q, a}", room_id) if !["q", "a"].include? type
+        comment_type = 'question' if type == 'q'
+        comment_type = 'answer' if type == 'a'
 
         begin
             %r{#{regex}}
@@ -331,6 +332,17 @@ class Commander
             @chatter.say("Invalid regex: #{regex}", room_id)
             @chatter.say("    #{e}", room_id)
             return
+        end
+
+        min_valid_amount = 10
+        num_matched = 0
+        Comment.where(post_type: comment_type).each do |comment|
+            num_matched += 1 if %r{#{regex.regex}}.match? comment.body_markdown.downcase
+            break if num_matched >= min_valid_amount
+        end
+
+        if num_matched < min_valid_amount
+            @chatter.say("**WARNING:** Regex only matched #{num_matched} comments curently in the db. You should probably check your regex.")
         end
 
         if reason = Reason.find_or_create_by(name: reason.join(' '))
@@ -399,43 +411,58 @@ class Commander
         @scanner.scan_last_n_comments(num_comments)
     end
 
-    def regexes(room_id, bot='*', reason=nil)
+    def regexes(room_id, bot='*', reason='*')
         return unless matches_bot?(bot)
-        reasons = (reason.nil? ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
+        reasons = (reason == '*' ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
             regexes = r.regexes.map { |regex| "- #{regex.post_type}: #{regex.regex}" }
-            "#{r.name.gsub(/\(\@(\w*)\)/, '(*\1)')}:\n#{regexes.join("\n")}"
+            "#{r.name}:\n#{regexes.join("\n")}"
         end
-        reasonless_regexes = Regex.where(reason_id: nil).map { |regex| "- #{regex.post_type}: #{regex.regex}" }
-        reasons << "Other Regexes:\n#{reasonless_regexes.join("\n")}"
-        @chatter.say(reasons.join("\n"), room_id)
+        @chatter.say_pingless(reasons.join("\n"), room_id)
     end
 
-    def regexstats(room_id, bot='*', reason=nil)
+    def regexstats(room_id, bot='*', reason='*')
         return unless matches_bot?(bot)
         #Build array of hashes for each regex containing info to build the stat output
-        regexes = (reason.nil? ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
+        regexes = (reason == '*' ? Reason.all : Reason.where("name LIKE ?", "%#{reason}%")).map do |r|
             r.regexes.map do |regex| 
-                tps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("tps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
-                fps = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).where("fps >= ?", 1).count { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
-                {:effectivePercent => (tps + fps > 0) ? tps/(tps + fps).to_f : 0, 
-                    :tps => tps, :fps => fps, :postType => regex.post_type, :regex => regex.regex, :reason => r.name}
+                all_matched = Comment.where(post_type: (regex.post_type == 'a' ? 'answer' : 'question')).find_all { |comment| %r{#{regex.regex}}.match(comment.body_markdown.downcase) }
+                tp_count = all_matched.count { |comment| comment.tps.to_i >= 1 }
+                fp_count = all_matched.count { |comment| comment.fps.to_i >= 1 }
+
+                {effectivePercent: (tp_count + fp_count > 0) ? tp_count/(tp_count + fp_count).to_f : 0, 
+                    tps: tp_count, fps: fp_count, totalMatched: all_matched.length, postType: regex.post_type,
+                    regex: regex.regex, reason: r.name}
             end
         end
-        regexes = regexes.flatten.sort_by { |regex| regex[:effectivePercent] } #Order by effectiveness
+
+        regexes = regexes.flatten.sort do |regex1, regex2| 
+            regex1[:reason] != regex2[:reason] ? #Order by reason...
+                regex1[:reason] <=> regex2[:reason] :
+                regex1[:postType] != regex2[:postType] ? #Then post type...
+                    regex1[:postType] <=> regex2[:postType] :
+                    regex1[:totalMatched] <=> regex2[:totalMatched] #Then total Matched.
+        end
 
         #Figure out proper widths for columns
         most_popular_regex = regexes.max { |a, b| a[:tps] + a[:fps] <=> b[:tps] + b[:fps] }
         tpfp_width = (("#{most_popular_regex[:tps] + most_popular_regex[:fps]}".length) * 2) + 4
-        percent_width =  regexes.any? { |regex| regex[:tps] != 0 && regex[:fps] == 0 } ? 7 : 6
+        feedback_percent_width =  regexes.any? { |regex| regex[:tps] == 0 && regex[:fps] == 0 } ? 7 : 6
+        total_percent_width =  regexes.any? { |regex| regex[:totalMatched] == 0 } ? 7 : 6
+        largest_matched = regexes.max { |a, b| a[:totalMatched] <=> b[:totalMatched] }
+        all_width = largest_matched[:totalMatched].to_s.length + largest_matched[:tps].to_s.length + 4
 
         #Put it all together...
-        @chatter.say regexes.map { |r| 
+        @chatter.say_pingless regexes.map { |r| 
             [
                 "".ljust(4),
                 percent_str(r[:tps], r[:tps] + r[:fps],
-                        precision: 1, blank_str: "n/a").ljust(percent_width),
-                "(#{r[:tps]}/#{r[:tps] + r[:fps]})".ljust(tpfp_width),
-                "| #{r[:regex]} (#{r[:postType]} - #{r[:reason]})"
+                        precision: 1, blank_str: "n/a").ljust(feedback_percent_width),
+                "(#{r[:tps]}/#{r[:tps] + r[:fps]}) ".ljust(tpfp_width),
+                "of feedbacked | ",
+                percent_str(r[:tps], r[:totalMatched],
+                        precision: 1, blank_str: "n/a").ljust(total_percent_width),
+                "(#{r[:tps]}/#{r[:totalMatched]})".ljust(all_width),
+                "of all | #{r[:regex]} (#{r[:postType]} - #{r[:reason]})"
             ].join
         }.join("\n"), room_id
     end
