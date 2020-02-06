@@ -338,7 +338,7 @@ class Commander
         num_matched = 0
         Comment.where(post_type: comment_type).each do |comment|
             num_matched += 1 if %r{#{regex.regex}}.match? comment.body_markdown.downcase
-            break if num_matched > min_valid_amount
+            break if num_matched >= min_valid_amount
         end
 
         if num_matched < min_valid_amount
