@@ -255,7 +255,7 @@ class CommentScanner
     end
 
     def perspective_scan(text)
-        return 'NoKey' unless @perspecitve_key
+        return 'NoKey' unless @perspective_key
 
         @logger.debug "Perspective scan..."
         response = HTTParty.post("https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=#{@perspective_key}",
