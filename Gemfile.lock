@@ -51,6 +51,7 @@ GEM
     connection_pool (2.2.2)
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
+    e2mmap (0.1.0)
     fast-stemmer (1.0.2)
     htmlentities (4.3.4)
     http-cookie (1.0.3)
@@ -95,6 +96,8 @@ GEM
     rake (13.0.0)
     sqlite3 (1.4.1)
     thread_safe (0.3.6)
+    thwait (0.2.0)
+      e2mmap
     tzinfo (1.2.5)
       thread_safe (~> 0.1)
     unf (0.1.4)
@@ -113,6 +116,7 @@ DEPENDENCIES
   activerecord
   chatx!
   classifier-reborn (= 2.1.0)
+  e2mmap
   htmlentities
   httparty
   pry
@@ -121,6 +125,7 @@ DEPENDENCIES
   se-api!
   se-realtime!
   sqlite3
+  thwait
 
 BUNDLED WITH
    1.17.2
