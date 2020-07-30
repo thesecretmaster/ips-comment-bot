@@ -336,7 +336,7 @@ class Replier
     def cat_mentions(msg_id, chat_user, room_id, message)
         return false unless contains_cat(message) && animals_on?(room_id)
 
-        cat_response = HTTParty.get("https://api.thecatapi.com/v1/images/search", :headers => { 'content-type': 'application/json', 'x-api-key': '0605155b-c002-48bf-a3ab-45be10448c44' }) #api-key is necessary to fetch image
+        cat_response = HTTParty.get("https://api.thecatapi.com/v1/images/search", :headers => { 'content-type': 'application/json', 'x-api-key': '' }) #api-key is necessary to fetch image
         #@chatter.say(cat_response.parsed_response[0]);
         if cat_response.length > 0
             @chatter.say(":#{msg_id} #{cat_response.parsed_response[0]["url"]}", room_id) # fetch ok
