@@ -11,6 +11,10 @@ gem "activerecord"
 gem "sqlite3"
 gem "rake"
 #gem "rugged"#, git: "https://github.com/libgit2/rugged"
+if RUBY_VERSION >= '2.7'
+  gem 'e2mmap'
+  gem 'thwait'
+end
 
 gem "pry-byebug"
 gem 'httparty'
