@@ -35,7 +35,7 @@ end
 master_logger = Logger.new(STDOUT, level: Logger::DEBUG, formatter: log_formatter)
 
 chatter = Chatter.new(settings["ChatXUsername"], settings["ChatXPassword"], 
-                        settings["hq_room_id"].to_i, master_logger, settings["rooms"])
+                        settings["hq_room_id"].to_i, master_logger, settings["rooms"], settings["server"])
 seclient = SEClient.new(settings["APIKey"], settings["site"], master_logger)
 scanner = CommentScanner.new(seclient, chatter, settings["all_comments"], ignore_users,
                                 master_logger, hot_secs: settings["hot_seconds"], hot_comment_num: settings["hot_comment_num"],

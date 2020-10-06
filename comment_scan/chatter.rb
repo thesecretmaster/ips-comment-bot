@@ -4,10 +4,10 @@ require "htmlentities"
 class Chatter
     attr_reader :HQroom, :rooms
 
-    def initialize(chatXuser, chatXpwd, hqroom, logger, rooms)
+    def initialize(chatXuser, chatXpwd, hqroom, logger, rooms, server)
         @logger = logger
 
-        @chatbot = ChatBot.new(chatXuser, chatXpwd, log_location: STDOUT, log_formatter: @logger.formatter)
+        @chatbot = ChatBot.new(chatXuser, chatXpwd, log_location: STDOUT, log_formatter: @logger.formatter, default_server: server)
         @HQroom = hqroom.to_i
         @rooms = rooms - [@HQroom] #Don't include HQ room in rooms
 

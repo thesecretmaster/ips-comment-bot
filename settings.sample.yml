@@ -2,6 +2,7 @@ ChatXUsername: chat@bot.com
 ChatXPassword: 'correct horse battery staple'
 APIKey: jaoehoagheraghpreuihgape
 site: 'interpersonal'
+server: 'stackexchange' #Used as `https://chat.#{server}.com/chats/#{room_id}`
 names: ['ips', '@ipscommentbot']
 hq_room_id: 63296
 all_comments: true
